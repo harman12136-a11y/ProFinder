@@ -1,0 +1,94 @@
+.software-card {
+  overflow: hidden;
+}
+
+.software-card-link {
+  display: block;
+}
+
+.software-card-image {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+  background: var(--gradient-soft);
+}
+
+.software-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.software-card:hover .software-card-image img {
+  transform: scale(1.05);
+}
+
+.software-card-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 4rem;
+  font-weight: 700;
+  background: var(--gradient-text);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.software-card-price {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 12px;
+  background: rgba(10, 10, 18, 0.85);
+  backdrop-filter: blur(8px);
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--pink);
+  border: 1px solid rgba(244, 114, 182, 0.3);
+}
+
+.software-card-body {
+  padding: 20px;
+}
+
+.software-card-body h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.software-card-body p {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.software-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.software-card-seller {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.software-card-contact {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--purple);
+}
