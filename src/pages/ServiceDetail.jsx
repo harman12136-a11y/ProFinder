@@ -25,7 +25,7 @@ export default function ServiceDetail() {
   const profileUser = getUserById(userId);
   const [showMessage, setShowMessage] = useState(false);
 
-  if (!service || !isServiceActive(service)) {
+  if (!service || (!isServiceActive(service) && user?.id !== userId)) {
     return (
       <div className="service-detail-page">
         <Navbar />
@@ -54,10 +54,18 @@ export default function ServiceDetail() {
               <span className="service-detail-profession">{getProfessionLabel(service)}</span>
               {service.experience && <p className="service-detail-exp">{service.experience} experience</p>}
               <p className="service-detail-bio">{service.bio}</p>
-              {user && user.id !== userId && (
-                <button type="button" className="btn btn-primary" onClick={() => setShowMessage(true)}>
-                  <MessageCircle size={18} /> Message Professional
-                </button>
+              <div className="service-detail-actions">
+                {user && user.id === userId && (
+                  <Link to="/manage-service" className="btn btn-outline">Manage Profession</Link>
+                )}
+                {user && user.id !== userId && (
+                  <button type="button" className="btn btn-primary" onClick={() => setShowMessage(true)}>
+                    <MessageCircle size={18} /> Message Professional
+                  </button>
+                )}
+              </div>
+              {!isServiceActive(service) && user?.id === userId && (
+                <p className="service-detail-inactive">Your profile is hidden — renew subscription from Dashboard to go live.</p>
               )}
             </div>
           </div>

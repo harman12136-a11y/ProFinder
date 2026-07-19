@@ -58,3 +58,21 @@
   width: 100%;
   justify-content: center;
 }
+
+.manage-service-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.manage-delete:hover {
+  color: var(--error);
+  border-color: var(--error);
+}
+
+.manage-saved {
+  color: var(--success);
+  font-size: 0.85rem;
+  margin-top: 12px;
+}

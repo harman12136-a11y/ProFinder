@@ -12,7 +12,7 @@ import {
   getServiceByUserId, isSubscriptionActive, renewSubscription,
 } from '../utils/storage';
 import { formatINR } from '../utils/validation';
-import { FEATURE_DAYS, SERVICE_MONTHLY_FEE } from '../utils/constants';
+import { FEATURE_DAYS, SERVICE_MONTHLY_FEE, SERVICE_PROFESSIONS } from '../utils/constants';
 import { Plus, Package, Settings, Pencil, Trash2, Sparkles, Briefcase } from 'lucide-react';
 import './Dashboard.css';
 
@@ -54,6 +54,12 @@ export default function Dashboard() {
   };
 
   const isFeatured = (l) => l.featured && l.featuredUntil && new Date(l.featuredUntil) > new Date();
+
+  const professionLabel = service
+    ? (service.profession === 'other' && service.professionOther
+      ? service.professionOther
+      : SERVICE_PROFESSIONS.find((p) => p.value === service.profession)?.label)
+    : null;
 
   return (
     <div className="dashboard-page">
@@ -102,16 +108,25 @@ export default function Dashboard() {
           <div className="dashboard-panel card service-panel">
             <div className="dashboard-panel-header">
               <h2><Briefcase size={18} /> Professional Services</h2>
-              {service ? (
-                <Link to={`/service/${service.userId}`} className="btn btn-outline">View Profile</Link>
-              ) : (
-                <Link to="/register-service" className="btn btn-primary">Register as Professional</Link>
-              )}
+              <div className="service-panel-actions">
+                {service && (
+                  <>
+                    <Link to="/manage-service" className="btn btn-outline"><Pencil size={16} /> Manage</Link>
+                    <Link to={`/service/${service.userId}`} className="btn btn-outline">View Profile</Link>
+                  </>
+                )}
+                {!service && (
+                  <Link to="/register-service" className="btn btn-primary">Register as Professional</Link>
+                )}
+              </div>
             </div>
             {service ? (
-              <p className="service-hint">
-                Your professional profile is {subscriptionActive ? 'live on the services page.' : 'registered but hidden — renew subscription to go live.'}
-              </p>
+              <>
+                {professionLabel && <p className="service-profession-tag">{professionLabel}</p>}
+                <p className="service-hint">
+                  Your professional profile is {subscriptionActive ? 'live on the services page.' : 'registered but hidden — renew subscription to go live.'}
+                </p>
+              </>
             ) : (
               <p className="service-hint">
                 Register as a C.A., developer, tax consultant, astrologer, or other professional.

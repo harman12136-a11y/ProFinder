@@ -7,6 +7,7 @@ const MESSAGES_KEY = 'profinder_messages';
 const REVIEWS_KEY = 'profinder_reviews';
 const BUNDLES_KEY = 'profinder_bundles';
 const SERVICES_KEY = 'profinder_services';
+const FEEDBACK_KEY = 'profinder_feedback';
 
 function read(key, fallback = []) {
   try {
@@ -373,6 +374,45 @@ export function registerServiceProfile(data) {
   return service;
 }
 
+export function updateServiceProfile(userId, updates) {
+  const service = getServiceByUserId(userId);
+  if (!service) return null;
+  return saveService({
+    ...service,
+    ...updates,
+    updatedAt: new Date().toISOString(),
+  });
+}
+
+export function deleteServiceProfile(userId) {
+  write(SERVICES_KEY, getServices().filter((s) => s.userId !== userId));
+}
+
 export function renewServiceSubscription(userId, days = 30) {
   return renewSubscription(userId, days);
+}
+
+export function addFeedback({ userId, userName, email, message }) {
+  const feedback = read(FEEDBACK_KEY, []);
+  feedback.unshift({
+    id: crypto.randomUUID(),
+    userId: userId || null,
+    userName: userName || 'Anonymous',
+    email: email || null,
+    message,
+    createdAt: new Date().toISOString(),
+  });
+  write(FEEDBACK_KEY, feedback);
+  if (userId) {
+    localStorage.setItem(`profinder_feedback_${userId}`, 'true');
+  }
+}
+
+export function hasSubmittedFeedback(userId) {
+  if (!userId) return false;
+  return localStorage.getItem(`profinder_feedback_${userId}`) === 'true';
+}
+
+export function getFeedback() {
+  return read(FEEDBACK_KEY, []);
 }

@@ -17,6 +17,7 @@ import Messages from './pages/Messages';
 import CreateBundle from './pages/CreateBundle';
 import Services from './pages/Services';
 import RegisterService from './pages/RegisterService';
+import ManageService from './pages/ManageService';
 import ServiceDetail from './pages/ServiceDetail';
 
 export default function App() {
@@ -56,6 +57,9 @@ export default function App() {
             <Route path="/services" element={<Services />} />
             <Route path="/register-service" element={
               <ProtectedRoute><RegisterService /></ProtectedRoute>
+            } />
+            <Route path="/manage-service" element={
+              <ProtectedRoute><ManageService /></ProtectedRoute>
             } />
             <Route path="/service/:userId" element={<ServiceDetail />} />
           </Routes>

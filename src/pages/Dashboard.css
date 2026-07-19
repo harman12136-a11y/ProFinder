@@ -57,6 +57,23 @@
   gap: 8px;
 }
 
+.service-panel-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.service-profession-tag {
+  display: inline-block;
+  font-size: 0.8rem;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--gradient-soft);
+  color: var(--accent);
+  border: 1px solid var(--border-accent);
+  margin-bottom: 8px;
+}
+
 .service-status {
   display: flex;
   flex-direction: column;

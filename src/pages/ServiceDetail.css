@@ -80,6 +80,18 @@
   max-width: 600px;
 }
 
+.service-detail-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.service-detail-inactive {
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: var(--error);
+}
+
 .service-detail-sections {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
