@@ -81,7 +81,9 @@ export default function SoftwareDetail() {
               <div className="detail-videos card">
                 <h3>Preview</h3>
                 {software.videos.map((video, i) => (
-                  <video key={i} src={video} controls className="detail-video" />
+                  <video key={i} src={video} controls className="detail-video">
+                    <track kind="captions" label="No captions available" />
+                  </video>
                 ))}
               </div>
             )}

@@ -56,8 +56,8 @@ export default function CreateBundle() {
               <input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Full Stack Dev Kit" required />
             </div>
 
-            <div className="form-group">
-              <label>Select Products (min. 2)</label>
+            <fieldset className="form-group bundle-fieldset">
+              <legend>Select Products (min. 2)</legend>
               <div className="bundle-products">
                 {listings.map((item) => (
                   <label key={item.id} className={`bundle-product-item ${selected.includes(item.id) ? 'selected' : ''}`}>
@@ -67,7 +67,7 @@ export default function CreateBundle() {
                   </label>
                 ))}
               </div>
-            </div>
+            </fieldset>
 
             {selected.length >= 2 && (
               <>

@@ -8,6 +8,8 @@ const REVIEWS_KEY = 'profinder_reviews';
 const BUNDLES_KEY = 'profinder_bundles';
 const SERVICES_KEY = 'profinder_services';
 const FEEDBACK_KEY = 'profinder_feedback';
+const JOBS_KEY = 'profinder_jobs';
+const PROPOSALS_KEY = 'profinder_proposals';
 
 function read(key, fallback = []) {
   try {
@@ -415,4 +417,152 @@ export function hasSubmittedFeedback(userId) {
 
 export function getFeedback() {
   return read(FEEDBACK_KEY, []);
+}
+
+export function getJobs() {
+  return read(JOBS_KEY, []);
+}
+
+export function getOpenJobs() {
+  return getJobs().filter((j) => j.status === 'open');
+}
+
+export function getJobById(id) {
+  return getJobs().find((j) => j.id === id) || null;
+}
+
+export function getJobsByPoster(userId) {
+  return getJobs().filter((j) => j.posterId === userId);
+}
+
+export function addJob(job) {
+  const jobs = getJobs();
+  const record = {
+    id: crypto.randomUUID(),
+    status: 'open',
+    hiredProposalId: null,
+    ...job,
+    createdAt: new Date().toISOString(),
+  };
+  jobs.unshift(record);
+  write(JOBS_KEY, jobs);
+  return record;
+}
+
+export function updateJob(id, updates) {
+  const jobs = getJobs();
+  const idx = jobs.findIndex((j) => j.id === id);
+  if (idx === -1) return null;
+  jobs[idx] = { ...jobs[idx], ...updates };
+  write(JOBS_KEY, jobs);
+  return jobs[idx];
+}
+
+export function deleteJob(id) {
+  write(JOBS_KEY, getJobs().filter((j) => j.id !== id));
+  write(PROPOSALS_KEY, getAllProposals().filter((p) => p.jobId !== id));
+}
+
+export function closeJob(id) {
+  return updateJob(id, { status: 'closed' });
+}
+
+export function reopenJob(id) {
+  return updateJob(id, { status: 'open', hiredProposalId: null });
+}
+
+function getAllProposals() {
+  return read(PROPOSALS_KEY, []);
+}
+
+export function getProposalsForJob(jobId) {
+  return getAllProposals()
+    .filter((p) => p.jobId === jobId)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
+export function getProposalCount(jobId) {
+  return getAllProposals().filter((p) => p.jobId === jobId).length;
+}
+
+export function getProposalsByFreelancer(userId) {
+  return getAllProposals()
+    .filter((p) => p.freelancerId === userId)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}
+
+export function getProposalById(id) {
+  return getAllProposals().find((p) => p.id === id) || null;
+}
+
+export function hasApplied(jobId, userId) {
+  return getAllProposals().some((p) => p.jobId === jobId && p.freelancerId === userId);
+}
+
+export function addProposal({ jobId, freelancerId, freelancerName, coverLetter, bidAmount, timeline }) {
+  const proposals = getAllProposals();
+  if (proposals.some((p) => p.jobId === jobId && p.freelancerId === freelancerId)) {
+    throw new Error('You have already applied to this job');
+  }
+  const proposal = {
+    id: crypto.randomUUID(),
+    jobId,
+    freelancerId,
+    freelancerName,
+    coverLetter: coverLetter.trim(),
+    bidAmount: Number(bidAmount),
+    timeline: timeline.trim(),
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+  };
+  proposals.unshift(proposal);
+  write(PROPOSALS_KEY, proposals);
+
+  const job = getJobById(jobId);
+  if (job) {
+    sendMessage({
+      fromUserId: freelancerId,
+      fromUserName: freelancerName,
+      toUserId: job.posterId,
+      subject: `New proposal — ${job.title}`,
+      body: `${freelancerName} applied to your job "${job.title}" with a bid of ₹${Number(bidAmount).toLocaleString('en-IN')}.`,
+    });
+  }
+  return proposal;
+}
+
+export function withdrawProposal(id) {
+  const proposals = getAllProposals();
+  const idx = proposals.findIndex((p) => p.id === id);
+  if (idx === -1) return null;
+  proposals[idx].status = 'withdrawn';
+  write(PROPOSALS_KEY, proposals);
+  return proposals[idx];
+}
+
+export function hireForJob(jobId, proposalId) {
+  const proposals = getAllProposals();
+  const target = proposals.find((p) => p.id === proposalId);
+  if (!target) return null;
+
+  proposals.forEach((p) => {
+    if (p.jobId === jobId) {
+      if (p.id === proposalId) p.status = 'accepted';
+      else if (p.status === 'pending') p.status = 'rejected';
+    }
+  });
+  write(PROPOSALS_KEY, proposals);
+  updateJob(jobId, { status: 'in-progress', hiredProposalId: proposalId });
+
+  const job = getJobById(jobId);
+  if (job) {
+    sendMessage({
+      fromUserId: job.posterId,
+      fromUserName: job.posterName,
+      toUserId: target.freelancerId,
+      subject: `You're hired — ${job.title}`,
+      body: `Congratulations! ${job.posterName} hired you for "${job.title}". Reply here to coordinate the work.`,
+    });
+  }
+  return target;
 }

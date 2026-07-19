@@ -4,30 +4,165 @@
   flex-direction: column;
 }
 
-.discover-content {
+.discover-layout {
+  display: flex;
   flex: 1;
-  padding-top: 96px;
-  padding-bottom: 64px;
+  padding-top: 72px;
+  min-height: calc(100vh - 72px);
 }
 
-.discover-hero h1 {
-  font-family: var(--font-display);
-  font-size: clamp(2rem, 4vw, 3rem);
-  margin-bottom: 8px;
+.discover-sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  background: var(--bg-secondary);
+  position: sticky;
+  top: 72px;
+  height: calc(100vh - 72px);
 }
 
-.discover-hero p {
+.discover-sidebar-filters {
+  flex: 1;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.discover-sidebar-filters h3 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.sidebar-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar-filter-group label {
+  font-size: 0.82rem;
+  font-weight: 500;
   color: var(--text-secondary);
-  font-size: 1.05rem;
+}
+
+.sidebar-filter-group select {
+  width: 100%;
+  padding: 10px 32px 10px 12px;
+  background-color: var(--select-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+.sidebar-search {
+  position: relative;
+}
+
+.sidebar-search svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.sidebar-search input {
+  width: 100%;
+  padding: 10px 12px 10px 36px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+.discover-count {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  margin-top: 4px;
+}
+
+.sidebar-clear {
+  font-size: 0.82rem;
+  padding: 6px 0;
+  align-self: flex-start;
+}
+
+.discover-main {
+  flex: 1;
+  padding: 32px 40px 64px;
+  min-width: 0;
+}
+
+.discover-main-header {
+  margin-bottom: 28px;
+}
+
+.discover-main-header h1 {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  margin-bottom: 6px;
+}
+
+.discover-main-header p {
+  color: var(--text-secondary);
+  font-size: 0.92rem;
 }
 
 .discover-grid {
-  margin-top: 28px;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.discover-main .category-pills {
+  margin-top: 8px;
 }
 
 .discover-empty {
-  margin-top: 28px;
   padding: 64px 24px;
   text-align: center;
   color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+  .discover-layout {
+    flex-direction: column;
+  }
+
+  .discover-sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .discover-sidebar-filters {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .discover-sidebar-filters h3 {
+    width: 100%;
+  }
+
+  .sidebar-filter-group {
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .discover-main {
+    padding: 24px 20px 48px;
+  }
 }

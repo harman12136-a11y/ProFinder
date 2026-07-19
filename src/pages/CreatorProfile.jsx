@@ -7,7 +7,7 @@ import FollowButton from '../components/FollowButton';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { getUserById, getUserListings, getCreatorStats, getBundlesBySeller } from '../utils/storage';
 import { formatINR } from '../utils/validation';
-import { Package, TrendingUp } from 'lucide-react';
+import { Package, TrendingUp, Link2 } from 'lucide-react';
 import './CreatorProfile.css';
 
 export default function CreatorProfile() {
@@ -16,6 +16,8 @@ export default function CreatorProfile() {
   const products = getUserListings(id);
   const bundles = getBundlesBySeller(id);
   const stats = getCreatorStats(id);
+  const skills = Array.isArray(creator?.skills) ? creator.skills : [];
+  const portfolio = Array.isArray(creator?.portfolio) ? creator.portfolio : [];
 
   if (!creator) {
     return (
@@ -38,13 +40,22 @@ export default function CreatorProfile() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="creator-avatar">{creator.name.charAt(0)}</div>
+          <div className="creator-avatar">
+            {creator.avatar ? <img src={creator.avatar} alt={creator.name} /> : creator.name.charAt(0)}
+          </div>
           <div className="creator-info">
             <div className="creator-name-row">
               <h1>{creator.name}</h1>
               <VerifiedBadge user={creator} size="lg" />
             </div>
             <p>{creator.bio || 'Indian software creator on Profinder.'}</p>
+            {skills.length > 0 && (
+              <div className="creator-skills">
+                {skills.map((skill) => (
+                  <span key={skill} className="creator-skill">{skill}</span>
+                ))}
+              </div>
+            )}
             <div className="creator-actions">
               <FollowButton creatorId={creator.id} />
               <Link to={`/messages?to=${creator.id}`} className="btn btn-outline">Message</Link>
@@ -67,6 +78,28 @@ export default function CreatorProfile() {
                   <div className="creator-bundle-price">
                     <strong>{formatINR(b.price)}</strong>
                     <s>{formatINR(b.originalPrice)}</s>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {portfolio.length > 0 && (
+          <>
+            <h2 className="creator-products-title">Portfolio</h2>
+            <div className="creator-portfolio">
+              {portfolio.map((item) => (
+                <div key={item.id} className="creator-portfolio-item card">
+                  {item.image && <img src={item.image} alt={item.title} className="creator-portfolio-thumb" />}
+                  <div className="creator-portfolio-body">
+                    <strong>{item.title}</strong>
+                    {item.description && <p>{item.description}</p>}
+                    {item.link && (
+                      <a href={item.link} target="_blank" rel="noopener noreferrer" className="creator-portfolio-link">
+                        <Link2 size={14} /> View project
+                      </a>
+                    )}
                   </div>
                 </div>
               ))}

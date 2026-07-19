@@ -17,23 +17,48 @@
 }
 
 .navbar-inner {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  position: relative;
+  display: flex;
   align-items: center;
+  width: 100%;
+  max-width: 100%;
+  padding: 0 20px 0 16px;
   gap: 16px;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .navbar-center {
   display: flex;
   align-items: center;
   gap: 8px;
-  justify-content: center;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .navbar-brand {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
+}
+
+.nav-dashboard {
+  flex-shrink: 0;
 }
 
 .navbar-logo {
@@ -84,14 +109,8 @@
   background-clip: text;
 }
 
-.navbar-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  justify-content: flex-end;
-}
-
 .nav-link {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -100,12 +119,50 @@
   font-size: 0.9rem;
   font-weight: 500;
   border-radius: var(--radius-sm);
-  transition: all var(--transition);
 }
 
-.nav-link:hover {
+.nav-link-label {
+  white-space: nowrap;
+}
+
+.nav-link:hover:not(.active) {
   color: var(--text-primary);
   background: var(--bg-card);
+}
+
+[data-theme="dark"] .nav-link.active {
+  color: #fff;
+  text-shadow:
+    0 0 10px rgba(255, 255, 255, 0.45),
+    0 0 22px rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="dark"] .nav-link.active svg {
+  color: #fff;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.35));
+}
+
+[data-theme="light"] .nav-link.active {
+  color: #0a0a0a;
+  font-weight: 700;
+}
+
+[data-theme="light"] .nav-link.active svg {
+  color: #0a0a0a;
+}
+
+[data-theme="light"] .nav-link.active .nav-link-label {
+  font-weight: 700;
+}
+
+.nav-messages {
+  position: relative;
+}
+
+.nav-messages .nav-badge {
+  position: absolute;
+  top: 2px;
+  right: 4px;
 }
 
 .nav-btn {
@@ -117,14 +174,10 @@
   padding: 8px;
 }
 
-.nav-messages {
-  position: relative;
-}
-
 .nav-badge {
   position: absolute;
-  top: 2px;
-  right: 4px;
+  top: -6px;
+  right: -10px;
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
@@ -139,16 +192,17 @@
 }
 
 @media (max-width: 768px) {
-  .navbar-inner {
-    grid-template-columns: auto 1fr;
-  }
-
   .navbar-center {
     display: none;
   }
 
-  .navbar-name {
+  .navbar-name,
+  .nav-dashboard .nav-link-label {
     display: none;
+  }
+
+  .nav-dashboard {
+    padding: 8px;
   }
 
   .navbar-actions {

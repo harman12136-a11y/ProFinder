@@ -25,12 +25,10 @@ export default function ProductCard({ product, index = 0 }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, duration: 0.4 }}
     >
-      <div
+      <button
+        type="button"
         className="product-card-media"
-        role="link"
-        tabIndex={0}
         onClick={() => navigate(`/software/${product.id}`)}
-        onKeyDown={(e) => e.key === 'Enter' && navigate(`/software/${product.id}`)}
       >
         <SaveButton productId={product.id} />
         <div className="product-card-tags">
@@ -44,7 +42,7 @@ export default function ProductCard({ product, index = 0 }) {
             <span>{product.title.charAt(0)}</span>
           </div>
         )}
-      </div>
+      </button>
       <div className="product-card-body">
         <Link to={`/software/${product.id}`} className="product-card-title">
           {product.title}

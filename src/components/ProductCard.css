@@ -14,10 +14,17 @@
 
 .product-card-media {
   position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
   aspect-ratio: 1;
   overflow: hidden;
   background: var(--gradient-soft);
   cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
 }
 
 .product-card-media img {

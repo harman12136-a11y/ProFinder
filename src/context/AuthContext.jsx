@@ -26,7 +26,7 @@ export function AuthProvider({ children }) {
     return safeUser;
   };
 
-  const signup = ({ name, email, phone, password }) => {
+  const signup = ({ name, email, phone, password, dob, survey, avatar, bio, skills, portfolio }) => {
     if (!name.trim()) throw new Error('Name is required');
     if (!validateEmail(email)) throw new Error('Please enter a valid email');
     if (!validateIndianPhone(phone)) throw new Error('Please enter a valid Indian phone number');
@@ -41,6 +41,12 @@ export function AuthProvider({ children }) {
       email: email.toLowerCase(),
       phone,
       password,
+      dob: dob || '',
+      survey: survey || null,
+      avatar: avatar || '',
+      bio: bio || '',
+      skills: Array.isArray(skills) ? skills : [],
+      portfolio: Array.isArray(portfolio) ? portfolio : [],
       provider: 'email',
       verified: { email: false, phone: false, github: false },
       createdAt: new Date().toISOString(),

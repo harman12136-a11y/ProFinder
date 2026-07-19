@@ -1,0 +1,104 @@
+.proposal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.proposal-modal {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  padding: 32px;
+  margin: auto;
+}
+
+.proposal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  color: var(--text-muted);
+  padding: 4px;
+}
+
+.proposal-close:hover {
+  color: var(--text-primary);
+}
+
+.proposal-modal h2 {
+  font-size: 1.3rem;
+  margin-bottom: 4px;
+}
+
+.proposal-job-title {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+}
+
+.proposal-budget-hint {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+  padding: 10px 14px;
+  background: var(--gradient-soft);
+  border: 1px solid var(--border-accent);
+  border-radius: var(--radius-sm);
+}
+
+.proposal-budget-hint strong {
+  color: var(--accent);
+}
+
+.proposal-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.proposal-modal form .form-group {
+  margin-bottom: 16px;
+}
+
+.proposal-submit {
+  width: 100%;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.proposal-sent {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.proposal-sent-check {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--gradient);
+  color: white;
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.proposal-sent p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-top: 6px;
+}
+
+@media (max-width: 520px) {
+  .proposal-row {
+    grid-template-columns: 1fr;
+  }
+}

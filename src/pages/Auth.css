@@ -117,3 +117,331 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ---- Signup survey wizard ---- */
+.survey-card {
+  max-width: 560px;
+}
+
+.survey-card-wide {
+  max-width: 640px;
+}
+
+.signup-profile {
+  gap: 14px;
+}
+
+.signup-avatar-field {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.signup-avatar-preview {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gradient);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.6rem;
+}
+
+.signup-avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.signup-avatar-hint {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  margin: 2px 0 8px;
+}
+
+.signup-avatar-btn {
+  padding: 8px 14px;
+  font-size: 0.82rem;
+}
+
+.optional-label {
+  font-weight: 400;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.skill-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.skill-input-row input {
+  flex: 1;
+}
+
+.skill-add-btn {
+  padding: 0 14px;
+  flex-shrink: 0;
+  font-size: 0.85rem;
+}
+
+.skill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.skill-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--gradient-soft);
+  border: 1px solid var(--border-accent);
+  color: var(--accent);
+  font-size: 0.8rem;
+}
+
+.skill-tag button {
+  display: flex;
+  align-items: center;
+  background: transparent;
+  color: var(--accent);
+  opacity: 0.7;
+}
+
+.inline-icon {
+  vertical-align: -2px;
+  color: var(--accent);
+}
+
+.signup-portfolio-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.signup-portfolio-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+
+.signup-portfolio-item button {
+  color: var(--text-muted);
+}
+
+.signup-portfolio-add {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+}
+
+.signup-portfolio-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.signup-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.signup-upload-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.survey-steps {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+
+.survey-step-dot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  position: relative;
+}
+
+.survey-step-dot span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+  transition: var(--transition);
+}
+
+.survey-step-dot small {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.survey-step-dot.active span {
+  background: var(--gradient);
+  border-color: transparent;
+  color: #fff;
+}
+
+.survey-step-dot.active small {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.survey-step-dot.done span {
+  background: var(--accent);
+  border-color: transparent;
+  color: #fff;
+}
+
+.survey-body {
+  min-height: 240px;
+}
+
+.survey-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.survey-q {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  margin: 0;
+}
+
+.survey-hint {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  margin: -8px 0 0;
+}
+
+.survey-options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.survey-option {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.survey-option:hover {
+  border-color: var(--border-accent);
+  background: var(--bg-card-hover);
+}
+
+.survey-option.selected {
+  border-color: var(--accent);
+  background: var(--gradient-soft);
+}
+
+.survey-option-label {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.survey-option-desc {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.survey-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.survey-chip {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.survey-chip:hover {
+  border-color: var(--border-accent);
+  color: var(--text-primary);
+}
+
+.survey-chip.selected {
+  background: var(--gradient);
+  border-color: transparent;
+  color: #fff;
+}
+
+.survey-passion {
+  margin-top: 4px;
+}
+
+.survey-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.survey-nav.single {
+  justify-content: flex-start;
+  margin-top: 16px;
+}
+
+.survey-nav .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}

@@ -140,28 +140,6 @@
   font-size: 0.9rem;
 }
 
-.cta-section {
-  padding: 80px 0;
-}
-
-.cta-inner {
-  text-align: center;
-  padding: 60px 40px;
-  background: var(--gradient-soft);
-  border-color: var(--border-accent);
-}
-
-.cta-inner h2 {
-  font-family: var(--font-display);
-  font-size: 2rem;
-  margin-bottom: 12px;
-}
-
-.cta-inner p {
-  color: var(--text-secondary);
-  margin-bottom: 20px;
-}
-
 .landing-empty {
   padding: 48px 24px;
   text-align: center;

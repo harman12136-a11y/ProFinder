@@ -51,12 +51,12 @@ export default function MessageModal({ isOpen, onClose, seller, product }) {
           ) : (
             <form onSubmit={handleSend}>
               <div className="form-group">
-                <label>Subject</label>
-                <input value={subject} onChange={(e) => setSubject(e.target.value)} required />
+                <label htmlFor="message-subject">Subject</label>
+                <input id="message-subject" value={subject} onChange={(e) => setSubject(e.target.value)} required />
               </div>
               <div className="form-group">
-                <label>Message</label>
-                <textarea value={body} onChange={(e) => setBody(e.target.value)} rows={5} required placeholder="Hi, I'm interested in your software..." />
+                <label htmlFor="message-body">Message</label>
+                <textarea id="message-body" value={body} onChange={(e) => setBody(e.target.value)} rows={5} required placeholder="Hi, I'm interested in your software..." />
               </div>
               <button type="submit" className="btn btn-primary msg-send">
                 <Send size={16} /> Send Message

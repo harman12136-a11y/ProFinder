@@ -19,6 +19,9 @@ import Services from './pages/Services';
 import RegisterService from './pages/RegisterService';
 import ManageService from './pages/ManageService';
 import ServiceDetail from './pages/ServiceDetail';
+import Jobs from './pages/Jobs';
+import PostJob from './pages/PostJob';
+import JobDetail from './pages/JobDetail';
 
 export default function App() {
   return (
@@ -62,6 +65,11 @@ export default function App() {
               <ProtectedRoute><ManageService /></ProtectedRoute>
             } />
             <Route path="/service/:userId" element={<ServiceDetail />} />
+            <Route path="/jobs" element={<Jobs />} />
+            <Route path="/post-job" element={
+              <ProtectedRoute><PostJob /></ProtectedRoute>
+            } />
+            <Route path="/job/:id" element={<JobDetail />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

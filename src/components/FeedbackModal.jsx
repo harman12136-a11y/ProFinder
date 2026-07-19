@@ -96,7 +96,6 @@ export default function FeedbackModal({ isOpen, onClose }) {
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="What confused you? What's missing? What would make Profinder better?"
                     rows={5}
-                    autoFocus
                   />
                   {error && <span className="form-error">{error}</span>}
                 </div>

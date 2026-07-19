@@ -5,13 +5,15 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import CategoryMarquee from '../components/CategoryMarquee';
 import ProductCard from '../components/ProductCard';
-import { getVisibleListings, getFeaturedListings } from '../utils/storage';
+import LandingPaths from '../components/LandingPaths';
+import { getFeaturedListings } from '../utils/storage';
 import { ArrowRight, Sparkles } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 import './Landing.css';
 
 export default function Landing() {
+  const { user } = useAuth();
   const featured = useMemo(() => getFeaturedListings(), []);
-  const popular = useMemo(() => getVisibleListings().slice(0, 8), []);
 
   return (
     <div className="landing">
@@ -43,11 +45,11 @@ export default function Landing() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            <Link to="/discover" className="btn btn-primary hero-btn">
+            <Link to={user ? '/discover' : '/login'} className="btn btn-primary hero-btn">
               Discover Products
               <ArrowRight size={18} />
             </Link>
-            <Link to="/signup" className="btn btn-outline hero-btn">
+            <Link to={user ? '/list-software' : '/signup'} className="btn btn-outline hero-btn">
               Start Selling
             </Link>
           </motion.div>
@@ -59,6 +61,8 @@ export default function Landing() {
           <CategoryMarquee />
         </div>
       </section>
+
+      <LandingPaths />
 
       {featured.length > 0 && (
         <section className="gumroad-section featured-section">
@@ -78,46 +82,6 @@ export default function Landing() {
           </div>
         </section>
       )}
-
-      <section className="gumroad-section">
-        <div className="page-container">
-          <div className="gumroad-section-header">
-            <div>
-              <h2>Discover best-selling products</h2>
-              <p>Explore software from creators across India</p>
-            </div>
-            <Link to="/discover" className="btn btn-outline">View all</Link>
-          </div>
-          {popular.length > 0 ? (
-            <div className="product-grid">
-              {popular.map((product, i) => (
-                <ProductCard key={product.id} product={product} index={i} />
-              ))}
-            </div>
-          ) : (
-            <div className="landing-empty card">
-              <p>No products yet. Be the first creator on Profinder.</p>
-              <Link to="/signup" className="btn btn-primary">Start Selling</Link>
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className="cta-section">
-        <motion.div
-          className="page-container cta-inner card"
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-        >
-          <h2>Share your work. Someone out there needs it.</h2>
-          <p>Publish your software and start selling today.</p>
-          <Link to="/signup" className="btn btn-primary">
-            Start selling
-            <ArrowRight size={18} />
-          </Link>
-        </motion.div>
-      </section>
 
       <Footer />
     </div>

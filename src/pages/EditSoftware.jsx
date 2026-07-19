@@ -189,7 +189,7 @@ export default function EditSoftware() {
           {step === 2 && (
             <motion.div className="list-form card" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
               <div className="form-group">
-                <label>Photos</label>
+                <p className="form-group-label">Photos</p>
                 <input type="file" accept="image/*" multiple onChange={handlePhotoUpload} id="photo-upload" hidden />
                 <label htmlFor="photo-upload" className="upload-btn"><Upload size={20} /> Upload Photos</label>
                 {form.photos.length > 0 && (
@@ -204,14 +204,16 @@ export default function EditSoftware() {
                 )}
               </div>
               <div className="form-group">
-                <label>Videos</label>
+                <p className="form-group-label">Videos</p>
                 <input type="file" accept="video/*" multiple onChange={handleVideoUpload} id="video-upload" hidden />
                 <label htmlFor="video-upload" className="upload-btn"><Upload size={20} /> Upload Videos</label>
                 {form.videos.length > 0 && (
                   <div className="media-preview">
                     {form.videos.map((video, i) => (
                       <div key={i} className="media-preview-item video">
-                        <video src={video} />
+                        <video src={video}>
+                          <track kind="captions" label="No captions available" />
+                        </video>
                         <button type="button" onClick={() => setForm({ ...form, videos: form.videos.filter((_, idx) => idx !== i) })} className="media-remove"><X size={14} /></button>
                       </div>
                     ))}

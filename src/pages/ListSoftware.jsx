@@ -246,7 +246,7 @@ export default function ListSoftware() {
               animate={{ opacity: 1, x: 0 }}
             >
               <div className="form-group">
-                <label>Photos</label>
+                <p className="form-group-label">Photos</p>
                 <div className="upload-area">
                   <input type="file" accept="image/*" multiple onChange={handlePhotoUpload} id="photo-upload" hidden />
                   <label htmlFor="photo-upload" className="upload-btn">
@@ -269,7 +269,7 @@ export default function ListSoftware() {
               </div>
 
               <div className="form-group">
-                <label>Videos</label>
+                <p className="form-group-label">Videos</p>
                 <div className="upload-area">
                   <input type="file" accept="video/*" multiple onChange={handleVideoUpload} id="video-upload" hidden />
                   <label htmlFor="video-upload" className="upload-btn">
@@ -281,7 +281,9 @@ export default function ListSoftware() {
                   <div className="media-preview">
                     {form.videos.map((video, i) => (
                       <div key={i} className="media-preview-item video">
-                        <video src={video} />
+                        <video src={video}>
+                          <track kind="captions" label="No captions available" />
+                        </video>
                         <button type="button" onClick={() => removeVideo(i)} className="media-remove">
                           <X size={14} />
                         </button>
