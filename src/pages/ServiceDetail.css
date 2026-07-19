@@ -1,0 +1,118 @@
+.service-detail-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.service-detail-content {
+  flex: 1;
+  padding-top: 96px;
+  padding-bottom: 64px;
+}
+
+.service-not-found {
+  flex: 1;
+  padding-top: 120px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.service-detail-header {
+  display: flex;
+  gap: 24px;
+  padding: 32px;
+  margin-bottom: 24px;
+  align-items: flex-start;
+}
+
+.service-detail-avatar {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--gradient);
+  color: white;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.service-detail-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.service-detail-info h1 {
+  font-size: 1.8rem;
+  margin: 0;
+}
+
+.service-detail-profession {
+  display: inline-block;
+  font-size: 0.8rem;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--gradient-soft);
+  color: var(--accent);
+  border: 1px solid var(--border-accent);
+  margin-bottom: 8px;
+}
+
+.service-detail-exp {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+}
+
+.service-detail-bio {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 16px;
+  max-width: 600px;
+}
+
+.service-detail-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.service-detail-section {
+  padding: 24px;
+}
+
+.service-detail-section h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+  margin-bottom: 12px;
+}
+
+.service-detail-section p {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 700px) {
+  .service-detail-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .service-detail-name-row {
+    justify-content: center;
+  }
+}

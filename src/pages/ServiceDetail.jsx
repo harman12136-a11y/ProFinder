@@ -1,0 +1,107 @@
+import { useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import VerifiedBadge from '../components/VerifiedBadge';
+import MessageModal from '../components/MessageModal';
+import { getServiceByUserId, getUserById, isServiceActive } from '../utils/storage';
+import { SERVICE_PROFESSIONS } from '../utils/constants';
+import { formatIndianPhone } from '../utils/validation';
+import { useAuth } from '../hooks/useAuth';
+import { Award, Briefcase, GraduationCap, MessageCircle } from 'lucide-react';
+import './ServiceDetail.css';
+import '../components/VerifiedBadge.css';
+
+function getProfessionLabel(service) {
+  if (service.profession === 'other' && service.professionOther) return service.professionOther;
+  return SERVICE_PROFESSIONS.find((p) => p.value === service.profession)?.label || service.profession;
+}
+
+export default function ServiceDetail() {
+  const { userId } = useParams();
+  const { user } = useAuth();
+  const service = getServiceByUserId(userId);
+  const profileUser = getUserById(userId);
+  const [showMessage, setShowMessage] = useState(false);
+
+  if (!service || !isServiceActive(service)) {
+    return (
+      <div className="service-detail-page">
+        <Navbar />
+        <div className="page-container service-not-found">
+          <h2>Professional not found</h2>
+          <p>This profile may be inactive or not yet registered.</p>
+          <Link to="/services" className="btn btn-primary">Browse Services</Link>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  return (
+    <div className="service-detail-page">
+      <Navbar />
+      <div className="page-container service-detail-content">
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+          <div className="service-detail-header card">
+            <div className="service-detail-avatar">{service.name?.charAt(0)}</div>
+            <div className="service-detail-info">
+              <div className="service-detail-name-row">
+                <h1>{service.name}</h1>
+                {profileUser && <VerifiedBadge user={profileUser} size="lg" />}
+              </div>
+              <span className="service-detail-profession">{getProfessionLabel(service)}</span>
+              {service.experience && <p className="service-detail-exp">{service.experience} experience</p>}
+              <p className="service-detail-bio">{service.bio}</p>
+              {user && user.id !== userId && (
+                <button type="button" className="btn btn-primary" onClick={() => setShowMessage(true)}>
+                  <MessageCircle size={18} /> Message Professional
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="service-detail-sections">
+            {service.degree && (
+              <div className="service-detail-section card">
+                <h2><GraduationCap size={20} /> Qualification</h2>
+                <p>{service.degree}</p>
+              </div>
+            )}
+
+            {service.achievements && (
+              <div className="service-detail-section card">
+                <h2><Award size={20} /> Achievements</h2>
+                <p>{service.achievements}</p>
+              </div>
+            )}
+
+            <div className="service-detail-section card">
+              <h2><Briefcase size={20} /> Services Offered</h2>
+              <p>{service.servicesOffered}</p>
+            </div>
+
+            {service.phone && (
+              <div className="service-detail-section card">
+                <h2>Contact</h2>
+                <p>{formatIndianPhone(service.phone)}</p>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </div>
+
+      {profileUser && (
+        <MessageModal
+          isOpen={showMessage}
+          onClose={() => setShowMessage(false)}
+          seller={profileUser}
+          product={{ title: `Service inquiry — ${getProfessionLabel(service)}` }}
+        />
+      )}
+
+      <Footer />
+    </div>
+  );
+}

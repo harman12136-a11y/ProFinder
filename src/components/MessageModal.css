@@ -1,0 +1,49 @@
+.msg-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+
+.msg-modal {
+  width: 100%;
+  max-width: 480px;
+  padding: 28px;
+  background: var(--bg-secondary);
+  position: relative;
+}
+
+.msg-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.msg-modal h2 {
+  margin-bottom: 6px;
+}
+
+.msg-sub {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-bottom: 20px;
+}
+
+.msg-send {
+  width: 100%;
+  padding: 14px;
+}
+
+.msg-sent {
+  text-align: center;
+  padding: 32px;
+  color: var(--success);
+  font-weight: 600;
+}

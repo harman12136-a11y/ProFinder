@@ -2,14 +2,16 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';
+import { getUnreadCount } from '../utils/storage';
 import Logo from './Logo';
-import { LogOut, Plus, LayoutGrid, User, Sun, Moon } from 'lucide-react';
+import { LogOut, Plus, Compass, BookMarked, LayoutDashboard, Sun, Moon, MessageCircle, Briefcase } from 'lucide-react';
 import './Navbar.css';
 
 export default function Navbar({ variant = 'default' }) {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const unread = user ? getUnreadCount(user.id) : 0;
 
   const handleLogout = () => {
     logout();
@@ -29,6 +31,23 @@ export default function Navbar({ variant = 'default' }) {
           <span className="navbar-name">Profinder</span>
         </Link>
 
+        <div className="navbar-center">
+          <Link to="/discover" className="nav-link">
+            <Compass size={18} />
+            Discover
+          </Link>
+          <Link to="/services" className="nav-link">
+            <Briefcase size={18} />
+            Services
+          </Link>
+          {user && (
+            <Link to="/library" className="nav-link">
+              <BookMarked size={18} />
+              Library
+            </Link>
+          )}
+        </div>
+
         <div className="navbar-actions">
           <button
             type="button"
@@ -41,17 +60,18 @@ export default function Navbar({ variant = 'default' }) {
 
           {user ? (
             <>
-              <Link to="/marketplace" className="nav-link">
-                <LayoutGrid size={18} />
-                Marketplace
-              </Link>
               <Link to="/list-software" className="btn btn-primary nav-btn">
                 <Plus size={18} />
-                List Software
+                Start selling
+              </Link>
+              <Link to="/messages" className="nav-link nav-messages">
+                <MessageCircle size={18} />
+                Messages
+                {unread > 0 && <span className="nav-badge">{unread}</span>}
               </Link>
               <Link to="/dashboard" className="nav-link">
-                <User size={18} />
-                {user.name.split(' ')[0]}
+                <LayoutDashboard size={18} />
+                Dashboard
               </Link>
               <button className="btn btn-ghost nav-logout" onClick={handleLogout}>
                 <LogOut size={18} />
@@ -59,8 +79,8 @@ export default function Navbar({ variant = 'default' }) {
             </>
           ) : (
             <>
-              <Link to="/login" className="btn btn-outline">Log In</Link>
-              <Link to="/signup" className="btn btn-primary">Sign Up</Link>
+              <Link to="/login" className="btn btn-outline">Log in</Link>
+              <Link to="/signup" className="btn btn-primary">Start selling</Link>
             </>
           )}
         </div>

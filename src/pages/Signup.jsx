@@ -24,7 +24,7 @@ export default function Signup() {
     setLoading(true);
     try {
       signup(form);
-      navigate('/marketplace');
+      navigate('/discover');
     } catch (err) {
       setError(err.message);
     } finally {

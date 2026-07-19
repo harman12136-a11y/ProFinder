@@ -4,9 +4,15 @@ import { X, CreditCard, Shield } from 'lucide-react';
 import { formatINR } from '../utils/validation';
 import './PaymentModal.css';
 
-const LISTING_FEE = 100;
-
-export default function PaymentModal({ isOpen, onClose, onSuccess }) {
+export default function PaymentModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  amount = 100,
+  title = 'Complete Payment',
+  description = 'Confirm payment to continue',
+  successText = 'Payment successful!',
+}) {
   const [step, setStep] = useState('confirm');
 
   const handlePay = () => {
@@ -48,13 +54,9 @@ export default function PaymentModal({ isOpen, onClose, onSuccess }) {
               <div className="payment-icon">
                 <CreditCard size={32} />
               </div>
-              <h2>Complete Payment</h2>
-              <p className="payment-desc">
-                Confirm payment to publish your listing on Profinder
-              </p>
-              <div className="payment-amount">
-                {formatINR(LISTING_FEE)}
-              </div>
+              <h2>{title}</h2>
+              <p className="payment-desc">{description}</p>
+              <div className="payment-amount">{formatINR(amount)}</div>
               <div className="payment-methods">
                 <span className="payment-method-badge">UPI</span>
                 <span className="payment-method-badge">Cards</span>
@@ -87,8 +89,8 @@ export default function PaymentModal({ isOpen, onClose, onSuccess }) {
               animate={{ scale: 1 }}
             >
               <div className="payment-success-icon">✓</div>
-              <h2>Payment Successful!</h2>
-              <p>Your listing is being published...</p>
+              <h2>{successText}</h2>
+              <p>Redirecting...</p>
             </motion.div>
           )}
         </motion.div>

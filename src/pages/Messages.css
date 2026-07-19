@@ -1,0 +1,149 @@
+.messages-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.messages-content {
+  flex: 1;
+  padding-top: 96px;
+  padding-bottom: 64px;
+}
+
+.messages-sub {
+  margin: 8px 0 24px;
+}
+
+.messages-layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  min-height: 520px;
+  overflow: hidden;
+}
+
+.messages-threads {
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+}
+
+.thread-item {
+  width: 100%;
+  text-align: left;
+  padding: 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  position: relative;
+  transition: background var(--transition);
+}
+
+.thread-item:hover,
+.thread-item.active {
+  background: var(--gradient-soft);
+}
+
+.thread-product {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--accent);
+  margin: 4px 0;
+}
+
+.thread-item p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.thread-unread {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.messages-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.messages-panel-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.messages-panel-header h2 {
+  font-size: 1.1rem;
+}
+
+.messages-panel-header a {
+  font-size: 0.85rem;
+  color: var(--accent);
+}
+
+.messages-list {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.message-bubble {
+  max-width: 75%;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+}
+
+.message-bubble.sent {
+  align-self: flex-end;
+  background: var(--gradient);
+  color: white;
+}
+
+.message-bubble.received {
+  align-self: flex-start;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+}
+
+.message-bubble time {
+  display: block;
+  font-size: 0.7rem;
+  margin-top: 6px;
+  opacity: 0.7;
+}
+
+.messages-placeholder,
+.messages-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px;
+  color: var(--text-muted);
+  height: 100%;
+}
+
+@media (max-width: 800px) {
+  .messages-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .messages-threads {
+    max-height: 240px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+}

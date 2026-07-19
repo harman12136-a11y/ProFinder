@@ -17,9 +17,17 @@
 }
 
 .navbar-inner {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+}
+
+.navbar-center {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
+  justify-content: center;
 }
 
 .navbar-brand {
@@ -80,6 +88,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  justify-content: flex-end;
 }
 
 .nav-link {
@@ -108,12 +117,37 @@
   padding: 8px;
 }
 
+.nav-messages {
+  position: relative;
+}
+
+.nav-badge {
+  position: absolute;
+  top: 2px;
+  right: 4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 @media (max-width: 768px) {
-  .navbar-name {
+  .navbar-inner {
+    grid-template-columns: auto 1fr;
+  }
+
+  .navbar-center {
     display: none;
   }
 
-  .nav-link span {
+  .navbar-name {
     display: none;
   }
 

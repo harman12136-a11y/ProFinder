@@ -42,6 +42,7 @@ export function AuthProvider({ children }) {
       phone,
       password,
       provider: 'email',
+      verified: { email: false, phone: false, github: false },
       createdAt: new Date().toISOString(),
     };
 

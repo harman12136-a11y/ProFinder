@@ -162,6 +162,27 @@
   margin-bottom: 20px;
 }
 
+.landing-empty {
+  padding: 48px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  color: var(--text-secondary);
+}
+
+.featured-section {
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--accent) 6%, transparent));
+}
+
+.inline-icon {
+  display: inline;
+  vertical-align: middle;
+  margin-right: 6px;
+  color: var(--accent);
+}
+
 @media (max-width: 900px) {
   .hero-inner {
     grid-template-columns: 1fr;

@@ -21,7 +21,7 @@ export default function Login() {
     setLoading(true);
     try {
       login(email, password);
-      navigate('/marketplace');
+      navigate('/discover');
     } catch (err) {
       setError(err.message);
     } finally {

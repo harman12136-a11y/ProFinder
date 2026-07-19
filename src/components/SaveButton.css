@@ -1,0 +1,32 @@
+.save-btn {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all var(--transition);
+  z-index: 2;
+}
+
+.save-btn:hover,
+.save-btn.saved {
+  color: var(--pink);
+  border-color: var(--border-accent);
+}
+
+[data-theme="light"] .save-btn {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-primary);
+}
+
+.save-btn.saved {
+  background: color-mix(in srgb, var(--accent) 20%, rgba(0, 0, 0, 0.55));
+}

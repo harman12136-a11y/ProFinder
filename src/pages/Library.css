@@ -1,0 +1,51 @@
+.library-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.library-content {
+  flex: 1;
+  padding-top: 96px;
+  padding-bottom: 64px;
+}
+
+.library-content .section-subtitle {
+  margin-top: 8px;
+  margin-bottom: 32px;
+}
+
+.library-section {
+  margin-bottom: 48px;
+}
+
+.library-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.library-section-header h2 {
+  font-size: 1.15rem;
+}
+
+.library-section-header span {
+  margin-left: auto;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--gradient-soft);
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.library-empty {
+  padding: 48px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  color: var(--text-secondary);
+}

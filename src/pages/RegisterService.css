@@ -1,0 +1,60 @@
+.register-service-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.register-service-content {
+  flex: 1;
+  padding-top: 96px;
+  padding-bottom: 64px;
+  max-width: 640px;
+}
+
+.register-service-form {
+  padding: 28px;
+  margin-top: 24px;
+}
+
+.optional-tag {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.register-pricing {
+  padding: 20px;
+  margin: 20px 0;
+  background: var(--gradient-soft);
+  border: 1px solid var(--border-accent);
+}
+
+.register-pricing h3 {
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+}
+
+.pricing-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.pricing-row strong {
+  color: var(--accent);
+}
+
+.pricing-note {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 12px;
+  line-height: 1.5;
+}
+
+.register-submit {
+  width: 100%;
+  justify-content: center;
+}

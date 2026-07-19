@@ -1,0 +1,22 @@
+.star-rating {
+  display: flex;
+  gap: 4px;
+}
+
+.star-rating button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  padding: 0;
+  cursor: pointer;
+  transition: color var(--transition);
+}
+
+.star-rating button.active,
+.star-rating button:hover {
+  color: var(--warning);
+}
+
+.star-rating.readonly button {
+  cursor: default;
+}
