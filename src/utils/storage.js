@@ -24,6 +24,9 @@ import {
   syncFeedbackFlag,
   syncListings,
   syncJobs,
+  syncSavedProducts,
+  syncFollows,
+  deleteUserContentFromSupabase,
 } from './supabaseSync';
 
 const MESSAGES_KEY = 'profinder_messages';
@@ -574,6 +577,55 @@ export function updateUserProfile(userId, updates) {
     setCurrentUser(safeUser);
   }
   return users[idx];
+}
+
+export async function deleteUserAccount(userId) {
+  const listingIds = getUserListings(userId).map((l) => l.id);
+  const jobIds = getJobsByPoster(userId).map((j) => j.id);
+
+  // Listings, bundles, services, jobs owned by this user
+  writeListings(readListings().filter((s) => s.sellerId !== userId));
+  writeBundles(readBundles().filter((b) => b.sellerId !== userId));
+  writeServices(readServices().filter((s) => s.userId !== userId));
+  writeJobs(readJobs().filter((j) => j.posterId !== userId));
+
+  // Proposals on their jobs + proposals they submitted
+  writeProposals(readProposals().filter(
+    (p) => p.freelancerId !== userId && !jobIds.includes(p.jobId)
+  ));
+
+  writePurchases(readPurchases().filter((p) => p.userId !== userId));
+  writeMessages(readMessages().filter((m) => m.fromUserId !== userId && m.toUserId !== userId));
+  writeReviews(readReviews().filter((r) => r.userId !== userId));
+  writeFeedback(readFeedback().filter((f) => f.userId !== userId));
+
+  const library = readLibrary();
+  delete library[userId];
+  listingIds.forEach((listingId) => {
+    Object.keys(library).forEach((uid) => {
+      library[uid] = (library[uid] || []).filter((itemId) => itemId !== listingId);
+    });
+  });
+  writeLibrary(library);
+  syncSavedProducts(library);
+
+  const following = readFollowing();
+  delete following[userId];
+  Object.keys(following).forEach((uid) => {
+    following[uid] = (following[uid] || []).filter((creatorId) => creatorId !== userId);
+  });
+  writeFollowing(following);
+  syncFollows(following);
+
+  writeUsers(readUsers().filter((u) => u.id !== userId));
+
+  if (getCurrentUser()?.id === userId) setCurrentUser(null);
+  localStorage.removeItem(`profinder_feedback_${userId}`);
+
+  await deleteUserContentFromSupabase(userId);
+
+  emitMessages();
+  window.dispatchEvent(new Event('profinder-refresh'));
 }
 
 export function getServices() {

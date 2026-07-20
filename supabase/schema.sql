@@ -26,7 +26,7 @@ create table if not exists public.profiles (
 -- ── Software listings ────────────────────────────────────────────────────────
 create table if not exists public.software_listings (
   id text primary key,
-  seller_id uuid references public.profiles(id) on delete set null,
+  seller_id uuid references public.profiles(id) on delete cascade,
   data jsonb not null,
   created_at timestamptz not null default now()
 );
@@ -52,7 +52,7 @@ create table if not exists public.reviews (
 -- ── Bundles ──────────────────────────────────────────────────────────────────
 create table if not exists public.bundles (
   id text primary key,
-  seller_id uuid references public.profiles(id) on delete set null,
+  seller_id uuid references public.profiles(id) on delete cascade,
   data jsonb not null,
   created_at timestamptz not null default now()
 );
@@ -68,7 +68,7 @@ create table if not exists public.services (
 -- ── Jobs ─────────────────────────────────────────────────────────────────────
 create table if not exists public.jobs (
   id text primary key,
-  poster_id uuid references public.profiles(id) on delete set null,
+  poster_id uuid references public.profiles(id) on delete cascade,
   data jsonb not null,
   created_at timestamptz not null default now()
 );
@@ -143,6 +143,8 @@ drop policy if exists "Users can insert their own profile" on public.profiles;
 create policy "Users can insert their own profile" on public.profiles for insert with check (auth.uid() = id);
 drop policy if exists "Users can update their own profile" on public.profiles;
 create policy "Users can update their own profile" on public.profiles for update using (auth.uid() = id);
+drop policy if exists "Users can delete their own profile" on public.profiles;
+create policy "Users can delete their own profile" on public.profiles for delete using (auth.uid() = id);
 
 -- Public read, authenticated write for marketplace data
 drop policy if exists "Listings are public" on public.software_listings;
@@ -227,6 +229,32 @@ $$;
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users for each row execute function public.handle_new_user();
+
+-- ── Cascade: deleting a profile removes their listings, jobs, services, bundles ─
+-- Safe to re-run on existing projects
+do $$
+begin
+  alter table public.software_listings drop constraint if exists software_listings_seller_id_fkey;
+  alter table public.software_listings
+    add constraint software_listings_seller_id_fkey
+    foreign key (seller_id) references public.profiles(id) on delete cascade;
+
+  alter table public.bundles drop constraint if exists bundles_seller_id_fkey;
+  alter table public.bundles
+    add constraint bundles_seller_id_fkey
+    foreign key (seller_id) references public.profiles(id) on delete cascade;
+
+  alter table public.jobs drop constraint if exists jobs_poster_id_fkey;
+  alter table public.jobs
+    add constraint jobs_poster_id_fkey
+    foreign key (poster_id) references public.profiles(id) on delete cascade;
+
+  -- services already cascade; ensure it
+  alter table public.services drop constraint if exists services_user_id_fkey;
+  alter table public.services
+    add constraint services_user_id_fkey
+    foreign key (user_id) references public.profiles(id) on delete cascade;
+end $$;
 
 -- Realtime (run separately if this errors on re-run)
 -- alter publication supabase_realtime add table public.messages;

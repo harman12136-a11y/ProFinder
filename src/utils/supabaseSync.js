@@ -196,6 +196,37 @@ export async function deleteListingFromSupabase(id) {
   await supabase.from('software_listings').delete().eq('id', id);
 }
 
+/** Remove all marketplace content owned by a user before profile deletion. */
+export async function deleteUserContentFromSupabase(userId) {
+  if (!isSupabaseConfigured() || !userId) return;
+
+  const { data: jobs } = await supabase
+    .from('jobs')
+    .select('id')
+    .eq('poster_id', userId);
+  const jobIds = (jobs || []).map((j) => j.id);
+
+  await Promise.all([
+    supabase.from('software_listings').delete().eq('seller_id', userId),
+    supabase.from('bundles').delete().eq('seller_id', userId),
+    supabase.from('services').delete().eq('user_id', userId),
+    supabase.from('jobs').delete().eq('poster_id', userId),
+    supabase.from('proposals').delete().eq('freelancer_id', userId),
+    supabase.from('messages').delete().eq('from_user_id', userId),
+    supabase.from('messages').delete().eq('to_user_id', userId),
+    supabase.from('reviews').delete().eq('user_id', userId),
+    supabase.from('purchases').delete().eq('user_id', userId),
+    supabase.from('saved_products').delete().eq('user_id', userId),
+    supabase.from('follows').delete().eq('follower_id', userId),
+    supabase.from('follows').delete().eq('creator_id', userId),
+    supabase.from('feedback_flags').delete().eq('user_id', userId),
+  ]);
+
+  if (jobIds.length) {
+    await supabase.from('proposals').delete().in('job_id', jobIds);
+  }
+}
+
 export async function syncMessages(messages) {
   if (!isSupabaseConfigured() || !messages?.length) return;
   const rows = messages.map((m) => ({

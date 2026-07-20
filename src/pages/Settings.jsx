@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -12,7 +13,8 @@ const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
 const emptyWork = { title: '', description: '', image: '', link: '' };
 
 export default function Settings() {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, deleteAccount } = useAuth();
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     name: user?.name || '',
     bio: user?.bio || '',
@@ -25,6 +27,8 @@ export default function Settings() {
   const [error, setError] = useState('');
   const [skillInput, setSkillInput] = useState('');
   const [work, setWork] = useState(emptyWork);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const avatarInputRef = useRef(null);
   const workInputRef = useRef(null);
 
@@ -114,6 +118,28 @@ export default function Settings() {
     updateUserProfile(user.id, form);
     updateUser(form);
     setSaved(true);
+  };
+
+  const handleDeleteProfile = async () => {
+    if (!user || deleting) return;
+
+    const confirmed = window.confirm(
+      'Delete your profile permanently? All your listings, services, jobs, and messages will be removed.'
+    );
+    if (!confirmed) return;
+
+    const typed = window.prompt('Type DELETE to confirm account removal');
+    if (typed !== 'DELETE') return;
+
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await deleteAccount();
+      navigate('/');
+    } catch (err) {
+      setDeleteError(err.message || 'Failed to delete profile. Please try again.');
+      setDeleting(false);
+    }
   };
 
   if (!user) return null;
@@ -246,6 +272,21 @@ export default function Settings() {
             <button type="submit" className="btn btn-primary">Save Profile</button>
             {saved && <p className="settings-saved">Profile updated successfully.</p>}
           </form>
+
+          <div className="settings-danger card">
+            <h2>Delete Profile</h2>
+            <p>Permanently remove your account, listings, services, jobs, and messages. This cannot be undone.</p>
+            {deleteError && <p className="form-error">{deleteError}</p>}
+            <button
+              type="button"
+              className="btn btn-outline settings-delete-btn"
+              onClick={handleDeleteProfile}
+              disabled={deleting}
+            >
+              <Trash2 size={16} />
+              {deleting ? 'Deleting...' : 'Delete Profile'}
+            </button>
+          </div>
         </motion.div>
       </div>
       <Footer />

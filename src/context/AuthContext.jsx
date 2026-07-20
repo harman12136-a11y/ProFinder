@@ -15,7 +15,9 @@ import {
   isUsernameTaken,
   profileToUser,
   userToProfileRow,
+  deleteProfile,
 } from '../utils/supabaseProfiles';
+import { deleteUserAccount } from '../utils/storage';
 
 const AuthContext = createContext(null);
 
@@ -245,8 +247,27 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const deleteAccount = async () => {
+    if (!user) return;
+
+    const userId = user.id;
+    await deleteUserAccount(userId);
+
+    if (isSupabaseConfigured()) {
+      try {
+        await deleteProfile(userId);
+      } catch {
+        /* profile may already be removed */
+      }
+      await supabase.auth.signOut();
+    }
+
+    setUser(null);
+    setCurrentUser(null);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, logout, updateUser, deleteAccount }}>
       {children}
     </AuthContext.Provider>
   );

@@ -104,3 +104,8 @@ export async function updateLastLogin(userId) {
     .eq('id', userId);
   if (error) throw new Error(error.message);
 }
+
+export async function deleteProfile(userId) {
+  const { error } = await supabase.from('profiles').delete().eq('id', userId);
+  if (error) throw new Error(error.message);
+}
