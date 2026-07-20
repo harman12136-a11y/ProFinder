@@ -4,7 +4,13 @@ import { getCache, setCacheHydrated } from './dataCache';
 
 function throwIfError(result, context) {
   if (result?.error) {
-    throw new Error(result.error.message || `Failed to sync ${context}`);
+    const msg = result.error.message || `Failed to sync ${context}`;
+    if (msg.includes('Could not find the table')) {
+      throw new Error(
+        'Database tables are missing. Open Supabase → SQL Editor, run profinder/supabase/schema.sql, then try again.',
+      );
+    }
+    throw new Error(msg);
   }
 }
 
