@@ -163,7 +163,7 @@ export default function Signup() {
     setError('');
     setLoading(true);
     try {
-      signup({
+      await signup({
         name: fullName,
         email: account.email,
         phone,

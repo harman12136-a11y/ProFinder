@@ -17,6 +17,7 @@
 .messages-layout {
   display: grid;
   grid-template-columns: 320px 1fr;
+  height: min(72vh, 680px);
   min-height: 520px;
   overflow: hidden;
 }
@@ -24,6 +25,7 @@
 .messages-threads {
   border-right: 1px solid var(--border);
   overflow-y: auto;
+  min-height: 0;
 }
 
 .thread-item {
@@ -74,9 +76,13 @@
 .messages-panel {
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
 }
 
 .messages-panel-header {
+  flex-shrink: 0;
   padding: 20px;
   border-bottom: 1px solid var(--border);
 }
@@ -97,6 +103,52 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-height: 0;
+}
+
+.messages-compose {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-secondary);
+  flex-shrink: 0;
+  margin-top: auto;
+}
+
+.messages-compose input {
+  flex: 1;
+  padding: 12px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.messages-compose input:focus {
+  outline: none;
+  border-color: var(--border-accent);
+}
+
+.messages-send {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 18px;
+  flex-shrink: 0;
+  border-radius: 999px;
+}
+
+.messages-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.messages-list-anchor {
+  height: 1px;
+  flex-shrink: 0;
 }
 
 .message-bubble {
@@ -139,6 +191,13 @@
 @media (max-width: 800px) {
   .messages-layout {
     grid-template-columns: 1fr;
+    height: auto;
+    min-height: 520px;
+    max-height: none;
+  }
+
+  .messages-panel {
+    min-height: 360px;
   }
 
   .messages-threads {

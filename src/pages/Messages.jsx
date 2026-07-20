@@ -1,19 +1,25 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useMemo, useState, useEffect, useRef } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useAuth } from '../hooks/useAuth';
-import { getMessages, getConversation, markMessagesRead, getUserById } from '../utils/storage';
-import { Mail } from 'lucide-react';
+import { useMessageSync } from '../hooks/useMessageSync';
+import { getMessages, getConversation, markMessagesRead, getUserById, sendMessage } from '../utils/storage';
+import { Mail, Send } from 'lucide-react';
 import './Messages.css';
 
 export default function Messages() {
   const { user } = useAuth();
-  const [refresh, setRefresh] = useState(0);
+  const [searchParams] = useSearchParams();
+  const syncKey = useMessageSync();
   const [activeKey, setActiveKey] = useState(null);
+  const [draft, setDraft] = useState('');
+  const handledToRef = useRef(null);
+  const listRef = useRef(null);
+  const bottomRef = useRef(null);
 
   const threads = useMemo(() => {
-    void refresh;
+    void syncKey;
     const msgs = getMessages(user.id);
     const map = new Map();
     msgs.forEach((m) => {
@@ -27,18 +33,73 @@ export default function Messages() {
       if (m.toUserId === user.id && !m.read) t.unread += 1;
     });
     return Array.from(map.values()).sort((a, b) => new Date(b.last.createdAt) - new Date(a.last.createdAt));
-  }, [user.id, refresh]);
+  }, [user.id, syncKey]);
 
-  const active = threads.find((t) => `${t.otherId}-${t.productId || 'general'}` === activeKey);
-  const conversation = active
-    ? getConversation(user.id, active.otherId, active.productId)
-    : [];
+  const active = useMemo(() => {
+    if (!activeKey) return null;
+    const found = threads.find((t) => `${t.otherId}-${t.productId || 'general'}` === activeKey);
+    if (found) return found;
+    if (activeKey.endsWith('-general')) {
+      const otherId = activeKey.slice(0, -'-general'.length);
+      return { otherId, productId: null, productTitle: null };
+    }
+    return null;
+  }, [activeKey, threads]);
+
+  const conversation = useMemo(() => {
+    if (!active) return [];
+    void syncKey;
+    return getConversation(user.id, active.otherId, active.productId);
+  }, [active, user.id, syncKey]);
 
   const openThread = (thread) => {
     const key = `${thread.otherId}-${thread.productId || 'general'}`;
     setActiveKey(key);
+    setDraft('');
     markMessagesRead(user.id, thread.otherId);
-    setRefresh((n) => n + 1);
+  };
+
+  useEffect(() => {
+    if (!activeKey && threads.length > 0 && !searchParams.get('to')) {
+      const thread = threads[0];
+      setActiveKey(`${thread.otherId}-${thread.productId || 'general'}`);
+    }
+  }, [threads, activeKey, searchParams]);
+
+  useEffect(() => {
+    const to = searchParams.get('to');
+    if (!to || to === user.id || handledToRef.current === to) return;
+    handledToRef.current = to;
+    const thread = threads.find((t) => t.otherId === to);
+    if (thread) {
+      setActiveKey(`${thread.otherId}-${thread.productId || 'general'}`);
+      setDraft('');
+      markMessagesRead(user.id, thread.otherId);
+    } else {
+      setActiveKey(`${to}-general`);
+      setDraft('');
+    }
+  }, [searchParams, threads, user.id]);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [conversation, activeKey]);
+
+  const handleSend = (e) => {
+    e.preventDefault();
+    const text = draft.trim();
+    if (!text || !active) return;
+
+    setDraft('');
+    sendMessage({
+      fromUserId: user.id,
+      fromUserName: user.name,
+      toUserId: active.otherId,
+      productId: active.productId,
+      productTitle: active.productTitle,
+      subject: active.productTitle ? `Re: ${active.productTitle}` : 'Message',
+      body: text,
+    });
   };
 
   return (
@@ -62,7 +123,7 @@ export default function Messages() {
                 >
                   <strong>{other?.name || 'User'}</strong>
                   {thread.productTitle && <span className="thread-product">{thread.productTitle}</span>}
-                  <p>{thread.last.body.slice(0, 60)}...</p>
+                  <p>{thread.last.body.slice(0, 60)}{thread.last.body.length > 60 ? '...' : ''}</p>
                   {thread.unread > 0 && <span className="thread-unread">{thread.unread}</span>}
                 </button>
               );
@@ -82,14 +143,28 @@ export default function Messages() {
                     )}
                   </div>
                 </div>
-                <div className="messages-list">
+                <div className="messages-list" ref={listRef}>
                   {conversation.map((m) => (
                     <div key={m.id} className={`message-bubble ${m.fromUserId === user.id ? 'sent' : 'received'}`}>
                       <p>{m.body}</p>
                       <time>{new Date(m.createdAt).toLocaleString('en-IN')}</time>
                     </div>
                   ))}
+                  <div ref={bottomRef} className="messages-list-anchor" />
                 </div>
+                <form className="messages-compose" onSubmit={handleSend}>
+                  <input
+                    type="text"
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    placeholder="Type a message..."
+                    aria-label="Message"
+                  />
+                  <button type="submit" className="btn btn-primary messages-send" disabled={!draft.trim()}>
+                    <Send size={18} />
+                    Send
+                  </button>
+                </form>
               </>
             ) : (
               <div className="messages-placeholder">

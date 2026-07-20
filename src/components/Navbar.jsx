@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../hooks/useTheme';
 import { getUnreadCount } from '../utils/storage';
+import { useMessageSync } from '../hooks/useMessageSync';
 import Logo from './Logo';
 import { LogOut, Plus, Compass, BookMarked, LayoutDashboard, Sun, Moon, MessageCircle, Briefcase, Search } from 'lucide-react';
 import './Navbar.css';
@@ -26,6 +27,7 @@ export default function Navbar({ variant = 'default' }) {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  useMessageSync();
   const unread = user ? getUnreadCount(user.id) : 0;
   const entranceDone = sessionStorage.getItem(ENTRANCE_KEY) === '1';
 

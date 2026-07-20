@@ -4,6 +4,18 @@ const SOFTWARE_KEY = 'profinder_software';
 const LIBRARY_KEY = 'profinder_library';
 const FOLLOWING_KEY = 'profinder_following';
 const MESSAGES_KEY = 'profinder_messages';
+export { MESSAGES_KEY };
+
+const messageListeners = new Set();
+
+export function subscribeMessages(listener) {
+  messageListeners.add(listener);
+  return () => messageListeners.delete(listener);
+}
+
+function emitMessages() {
+  messageListeners.forEach((listener) => listener());
+}
 const REVIEWS_KEY = 'profinder_reviews';
 const BUNDLES_KEY = 'profinder_bundles';
 const SERVICES_KEY = 'profinder_services';
@@ -215,6 +227,7 @@ export function sendMessage({ fromUserId, fromUserName, toUserId, productId, pro
   messages.push(msg);
   write(MESSAGES_KEY, messages);
   if (productId) trackListingContact(productId);
+  emitMessages();
   return msg;
 }
 
@@ -224,6 +237,7 @@ export function markMessagesRead(userId, otherUserId) {
     if (m.toUserId === userId && m.fromUserId === otherUserId) m.read = true;
   });
   write(MESSAGES_KEY, messages);
+  emitMessages();
 }
 
 export function getUnreadCount(userId) {
