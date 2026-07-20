@@ -11,10 +11,11 @@ import {
   hireForJob, closeJob, reopenJob, deleteJob, getUserById,
 } from '../utils/storage';
 import { formatINR } from '../utils/validation';
+import { navigateContact, isOwner } from '../utils/contactActions';
 import { JOB_EXPERIENCE_LEVELS } from '../utils/constants';
 import {
   Clock, MapPin, Wallet, Briefcase, Users, CheckCircle2, Trash2,
-  Lock, RotateCcw, ArrowLeft, IndianRupee, Calendar,
+  Lock, RotateCcw, ArrowLeft, IndianRupee, Calendar, MessageCircle, Settings,
 } from 'lucide-react';
 import './JobDetail.css';
 
@@ -58,12 +59,37 @@ export default function JobDetail() {
     );
   }
 
-  const isPoster = user?.id === job.posterId;
+  const isPoster = isOwner(user, job.posterId);
   const proposals = isPoster ? getProposalsForJob(job.id) : [];
   const applied = user && !isPoster ? hasApplied(job.id, user.id) : false;
   const myProposal = applied ? getProposalsByFreelancer(user.id).find((p) => p.jobId === job.id) : null;
   const budgetLabel = job.budgetType === 'hourly' ? `${formatINR(job.budget)}/hr` : formatINR(job.budget);
   const expLabel = JOB_EXPERIENCE_LEVELS.find((x) => x.value === job.experienceLevel)?.label || job.experienceLevel;
+
+  const handleContact = () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    if (isPoster) {
+      const proposalsSection = document.getElementById('job-proposals');
+      if (proposalsSection) {
+        proposalsSection.scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+      navigate(`/job/${job.id}`);
+      return;
+    }
+    navigateContact(navigate, {
+      user,
+      ownerId: job.posterId,
+      type: 'job',
+      id: job.id,
+      toUserId: job.posterId,
+      contextId: job.id,
+      contextTitle: job.title,
+    });
+  };
 
   const handleHire = (proposalId) => {
     if (!window.confirm('Hire this freelancer? Other pending proposals will be declined.')) return;
@@ -130,7 +156,7 @@ export default function JobDetail() {
               )}
 
               {isPoster && (
-                <div className="job-detail-section card">
+                <div id="job-proposals" className="job-detail-section card">
                   <div className="proposals-header">
                     <h2>Proposals <span className="proposals-count">{proposals.length}</span></h2>
                   </div>
@@ -161,7 +187,21 @@ export default function JobDetail() {
                             </div>
                             <p className="proposal-cover">{p.coverLetter}</p>
                             <div className="proposal-actions">
-                              <Link to={`/messages?to=${p.freelancerId}`} className="btn btn-outline">Message</Link>
+                              <button
+                                type="button"
+                                className="btn btn-outline"
+                                onClick={() => navigateContact(navigate, {
+                                  user,
+                                  ownerId: p.freelancerId,
+                                  type: 'profile',
+                                  id: p.freelancerId,
+                                  toUserId: p.freelancerId,
+                                  contextId: job.id,
+                                  contextTitle: job.title,
+                                })}
+                              >
+                                Message
+                              </button>
                               {job.status === 'open' && p.status === 'pending' && (
                                 <button type="button" className="btn btn-primary" onClick={() => handleHire(p.id)}>
                                   <CheckCircle2 size={16} /> Hire
@@ -192,6 +232,9 @@ export default function JobDetail() {
                   <>
                     <h3>Manage your job</h3>
                     <p>{proposals.length} proposal{proposals.length === 1 ? '' : 's'} received.</p>
+                    <button type="button" className="btn btn-primary job-cta-btn" onClick={handleContact}>
+                      <Settings size={16} /> Manage Job
+                    </button>
                     {job.status === 'open' && (
                       <button type="button" className="btn btn-outline job-cta-btn" onClick={handleClose}>
                         <Lock size={16} /> Close Job
@@ -221,12 +264,17 @@ export default function JobDetail() {
                         <span className={`proposal-status ${PROPOSAL_STATUS[myProposal?.status]?.cls || 'ps-pending'}`}>
                           {PROPOSAL_STATUS[myProposal?.status]?.label || 'Pending'}
                         </span>
-                        <Link to={`/messages?to=${job.posterId}`} className="btn btn-outline job-cta-btn">Message Client</Link>
+                        <button type="button" className="btn btn-outline job-cta-btn" onClick={handleContact}>
+                          <MessageCircle size={16} /> Message Client
+                        </button>
                       </div>
                     ) : job.status === 'open' ? (
                       <>
                         <h3>Apply to this job</h3>
                         <p>Send a proposal with your bid and timeline.</p>
+                        <button type="button" className="btn btn-outline job-cta-btn" onClick={handleContact}>
+                          <MessageCircle size={16} /> Message Client
+                        </button>
                         <button type="button" className="btn btn-primary job-cta-btn" onClick={() => setShowApply(true)}>
                           <Users size={16} /> Apply Now
                         </button>

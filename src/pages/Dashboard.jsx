@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -27,7 +27,11 @@ const TABS = [
 export default function Dashboard() {
   const { user, updateUser } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('listings');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(() => {
+    const tab = searchParams.get('tab');
+    return TABS.some((t) => t.id === tab) ? tab : 'listings';
+  });
   const [listings, setListings] = useState(() => getUserListings(user.id));
   const [bundles, setBundles] = useState(() => getBundlesBySeller(user.id));
   const [featureTarget, setFeatureTarget] = useState(null);
@@ -35,6 +39,13 @@ export default function Dashboard() {
   const [postedJobs, setPostedJobs] = useState(() => getJobsByPoster(user.id));
   const [myProposals, setMyProposals] = useState(() => getProposalsByFreelancer(user.id));
   const subscriptionActive = isSubscriptionActive(user.id);
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && TABS.some((t) => t.id === tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   const refresh = () => {
     setListings(getUserListings(user.id));

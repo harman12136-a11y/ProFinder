@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -7,11 +7,15 @@ import FollowButton from '../components/FollowButton';
 import VerifiedBadge from '../components/VerifiedBadge';
 import { getCreatorProfile, getUserListings, getCreatorStats, getBundlesBySeller } from '../utils/storage';
 import { formatINR } from '../utils/validation';
-import { Package, TrendingUp, Link2 } from 'lucide-react';
+import { navigateContact } from '../utils/contactActions';
+import { useAuth } from '../hooks/useAuth';
+import { Package, TrendingUp, Link2, MessageCircle, Settings } from 'lucide-react';
 import './CreatorProfile.css';
 
 export default function CreatorProfile() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const creator = getCreatorProfile(id);
   const products = getUserListings(id);
   const bundles = getBundlesBySeller(id);
@@ -58,7 +62,23 @@ export default function CreatorProfile() {
             )}
             <div className="creator-actions">
               <FollowButton creatorId={creator.id} />
-              <Link to={`/messages?to=${creator.id}`} className="btn btn-outline">Message</Link>
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => navigateContact(navigate, {
+                  user,
+                  ownerId: creator.id,
+                  type: 'profile',
+                  id: creator.id,
+                  toUserId: creator.id,
+                })}
+              >
+                {user?.id === creator.id ? (
+                  <><Settings size={16} /> Manage Profile</>
+                ) : (
+                  <><MessageCircle size={16} /> Message</>
+                )}
+              </button>
             </div>
           </div>
           <div className="creator-stats">

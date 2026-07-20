@@ -1,15 +1,14 @@
-import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import VerifiedBadge from '../components/VerifiedBadge';
-import MessageModal from '../components/MessageModal';
 import { getServiceByUserId, getSellerForService, isServiceActive } from '../utils/storage';
 import { SERVICE_PROFESSIONS, FREE_PUBLISH_MODE } from '../utils/constants';
 import { formatIndianPhone } from '../utils/validation';
+import { navigateContact, isOwner } from '../utils/contactActions';
 import { useAuth } from '../hooks/useAuth';
-import { Award, Briefcase, GraduationCap, MessageCircle } from 'lucide-react';
+import { Award, Briefcase, GraduationCap, MessageCircle, Settings } from 'lucide-react';
 import './ServiceDetail.css';
 import '../components/VerifiedBadge.css';
 
@@ -20,12 +19,13 @@ function getProfessionLabel(service) {
 
 export default function ServiceDetail() {
   const { userId } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const service = getServiceByUserId(userId);
   const profileUser = getSellerForService(service);
-  const [showMessage, setShowMessage] = useState(false);
+  const ownService = isOwner(user, userId);
 
-  if (!service || (!isServiceActive(service) && user?.id !== userId)) {
+  if (!service || (!isServiceActive(service) && !ownService)) {
     return (
       <div className="service-detail-page">
         <Navbar />
@@ -38,6 +38,18 @@ export default function ServiceDetail() {
       </div>
     );
   }
+
+  const handleContact = () => {
+    navigateContact(navigate, {
+      user,
+      ownerId: userId,
+      type: 'service',
+      id: userId,
+      toUserId: userId,
+      contextId: `service-${userId}`,
+      contextTitle: `Service — ${getProfessionLabel(service)}`,
+    });
+  };
 
   return (
     <div className="service-detail-page">
@@ -55,16 +67,15 @@ export default function ServiceDetail() {
               {service.experience && <p className="service-detail-exp">{service.experience} experience</p>}
               <p className="service-detail-bio">{service.bio}</p>
               <div className="service-detail-actions">
-                {user && user.id === userId && (
-                  <Link to="/manage-service" className="btn btn-outline">Manage Profession</Link>
-                )}
-                {user && user.id !== userId && (
-                  <button type="button" className="btn btn-primary" onClick={() => setShowMessage(true)}>
-                    <MessageCircle size={18} /> Message Professional
-                  </button>
-                )}
+                <button type="button" className="btn btn-primary" onClick={handleContact}>
+                  {ownService ? (
+                    <><Settings size={18} /> Manage Profession</>
+                  ) : (
+                    <><MessageCircle size={18} /> Message</>
+                  )}
+                </button>
               </div>
-              {!FREE_PUBLISH_MODE && !isServiceActive(service) && user?.id === userId && (
+              {!FREE_PUBLISH_MODE && !isServiceActive(service) && ownService && (
                 <p className="service-detail-inactive">Your profile is hidden — renew subscription from Dashboard to go live.</p>
               )}
             </div>
@@ -99,13 +110,6 @@ export default function ServiceDetail() {
           </div>
         </motion.div>
       </div>
-
-      <MessageModal
-        isOpen={showMessage}
-        onClose={() => setShowMessage(false)}
-        seller={profileUser}
-        product={{ title: `Service inquiry — ${getProfessionLabel(service)}` }}
-      />
 
       <Footer />
     </div>

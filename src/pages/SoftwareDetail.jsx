@@ -21,8 +21,9 @@ import {
   recordPurchase,
 } from '../utils/storage';
 import { formatINR, formatIndianPhone } from '../utils/validation';
+import { navigateContact, isOwner } from '../utils/contactActions';
 import { useAuth } from '../hooks/useAuth';
-import { Phone, ExternalLink, MessageCircle, ShoppingBag, Check } from 'lucide-react';
+import { Phone, ExternalLink, MessageCircle, ShoppingBag, Check, Settings } from 'lucide-react';
 import './SoftwareDetail.css';
 import '../components/VerifiedBadge.css';
 
@@ -35,7 +36,7 @@ export default function SoftwareDetail() {
   const [owned, setOwned] = useState(() => (user ? hasPurchased(user.id, id) : false));
   const seller = software ? getSellerForListing(software) : null;
   const rating = software ? getProductRating(software.id) : { avg: 0, count: 0 };
-  const isOwnListing = Boolean(user?.id && software?.sellerId && user.id === software.sellerId);
+  const isOwnListing = isOwner(user, software?.sellerId);
 
   useEffect(() => {
     setSoftware(getSoftwareById(id) || null);
@@ -63,16 +64,15 @@ export default function SoftwareDetail() {
 
   const handleMessage = () => {
     trackListingContact(software.id);
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-    if (isOwnListing) {
-      navigate('/messages');
-      return;
-    }
-    const params = new URLSearchParams({ to: software.sellerId, product: software.id });
-    navigate(`/messages?${params.toString()}`);
+    navigateContact(navigate, {
+      user,
+      ownerId: software.sellerId,
+      type: 'listing',
+      id: software.id,
+      toUserId: software.sellerId,
+      contextId: software.id,
+      contextTitle: software.title,
+    });
   };
 
   const handleBuy = () => {
@@ -199,7 +199,8 @@ export default function SoftwareDetail() {
 
               <div className="detail-contact-row">
                 <button type="button" className="btn btn-outline" onClick={handleMessage}>
-                  <MessageCircle size={16} /> Message
+                  {isOwnListing ? <Settings size={16} /> : <MessageCircle size={16} />}
+                  {isOwnListing ? 'Manage Listing' : 'Message'}
                 </button>
                 {software.contactPhone && (
                   <a href={`tel:${software.contactPhone.replace(/\s/g, '')}`} className="btn btn-outline" onClick={() => trackListingContact(software.id)}>

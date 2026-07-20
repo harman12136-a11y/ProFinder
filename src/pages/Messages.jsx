@@ -4,7 +4,8 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useAuth } from '../hooks/useAuth';
 import { useMessageSync } from '../hooks/useMessageSync';
-import { getMessages, getConversation, markMessagesRead, getUserById, sendMessage, getSoftwareById } from '../utils/storage';
+import { getMessages, getConversation, markMessagesRead, getUserById, sendMessage } from '../utils/storage';
+import { resolveContextTitle, resolveContextLink } from '../utils/messageContext';
 import { Mail, Send } from 'lucide-react';
 import './Messages.css';
 
@@ -42,13 +43,15 @@ export default function Messages() {
 
     const to = searchParams.get('to');
     const product = searchParams.get('product');
+    const titleParam = searchParams.get('title');
     if (to) {
       const expectedKey = product ? `${to}-${product}` : `${to}-general`;
       if (activeKey === expectedKey) {
-        const productTitle = product
-          ? getSoftwareById(product)?.title
-          : null;
-        return { otherId: to, productId: product || null, productTitle };
+        return {
+          otherId: to,
+          productId: product || null,
+          productTitle: resolveContextTitle(product, titleParam),
+        };
       }
     }
 
@@ -168,9 +171,14 @@ export default function Messages() {
                         || threads.find((t) => t.otherId === active.otherId)?.last?.fromUserName
                         || 'User'}
                     </h2>
-                    {active.productTitle && (
-                      <Link to={`/software/${active.productId}`}>{active.productTitle}</Link>
-                    )}
+                    {active.productTitle && (() => {
+                      const contextLink = resolveContextLink(active.productId);
+                      return contextLink ? (
+                        <Link to={contextLink}>{active.productTitle}</Link>
+                      ) : (
+                        <span className="thread-product">{active.productTitle}</span>
+                      );
+                    })()}
                   </div>
                 </div>
                 <div className="messages-list" ref={listRef}>
