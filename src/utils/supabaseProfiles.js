@@ -1,9 +1,11 @@
 import { supabase } from '../lib/supabase';
+import { normalizeUsername } from './validation';
 
 export function profileToUser(row) {
   if (!row) return null;
   return {
     id: row.id,
+    username: row.username || '',
     name: row.name || '',
     email: row.email || '',
     phone: row.phone || '',
@@ -25,8 +27,9 @@ export function profileToUser(row) {
 export function userToProfileRow(user) {
   return {
     id: user.id,
+    username: user.username ? normalizeUsername(user.username) : undefined,
     name: user.name,
-    email: user.email?.toLowerCase(),
+    email: user.email?.toLowerCase() || '',
     phone: user.phone || '',
     dob: user.dob || '',
     survey: user.survey || null,
@@ -53,6 +56,18 @@ export async function fetchProfile(userId) {
   return data;
 }
 
+export async function isUsernameTaken(username) {
+  const normalized = normalizeUsername(username);
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('username', normalized)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return Boolean(data);
+}
+
 export async function upsertProfile(row) {
   const { error } = await supabase.from('profiles').upsert(row, { onConflict: 'id' });
   if (error) throw new Error(error.message);
@@ -62,6 +77,7 @@ export async function updateProfile(userId, updates) {
   const row = { updated_at: new Date().toISOString() };
 
   if (updates.name !== undefined) row.name = updates.name;
+  if (updates.username !== undefined) row.username = normalizeUsername(updates.username);
   if (updates.email !== undefined) row.email = updates.email.toLowerCase();
   if (updates.phone !== undefined) row.phone = updates.phone;
   if (updates.dob !== undefined) row.dob = updates.dob;

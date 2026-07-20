@@ -6,7 +6,7 @@ import Footer from '../components/Footer';
 import PaymentModal from '../components/PaymentModal';
 import { useAuth } from '../hooks/useAuth';
 import { getServiceByUserId, registerServiceProfile, getUserById } from '../utils/storage';
-import { SERVICE_PROFESSIONS, SERVICE_REGISTRATION_FEE, SERVICE_MONTHLY_FEE } from '../utils/constants';
+import { SERVICE_PROFESSIONS, SERVICE_REGISTRATION_FEE, SERVICE_MONTHLY_FEE, FREE_PUBLISH_MODE } from '../utils/constants';
 import { formatINR } from '../utils/validation';
 import './RegisterService.css';
 
@@ -27,8 +27,8 @@ export default function RegisterService() {
   const [errors, setErrors] = useState({});
   const [showPayment, setShowPayment] = useState(false);
 
-  if (existing?.registrationPaid) {
-    return <Navigate to="/dashboard" replace />;
+  if (existing && (existing.registrationPaid || FREE_PUBLISH_MODE)) {
+    return <Navigate to="/manage-service" replace />;
   }
 
   const isOther = form.profession === 'other';
@@ -49,7 +49,12 @@ export default function RegisterService() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (validate()) setShowPayment(true);
+    if (!validate()) return;
+    if (FREE_PUBLISH_MODE) {
+      handlePaymentSuccess();
+      return;
+    }
+    setShowPayment(true);
   };
 
   const handlePaymentSuccess = () => {
@@ -79,9 +84,11 @@ export default function RegisterService() {
       <div className="page-container register-service-content">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="section-title">Register as a <span className="gradient-text">Professional</span></h1>
-          <p className="section-subtitle">
-            {formatINR(SERVICE_REGISTRATION_FEE)} includes 1 month active listing for your products &amp; services. Then {formatINR(SERVICE_MONTHLY_FEE)}/month to renew.
-          </p>
+          {!FREE_PUBLISH_MODE && (
+            <p className="section-subtitle">
+              {formatINR(SERVICE_REGISTRATION_FEE)} includes 1 month active listing for your products &amp; services. Then {formatINR(SERVICE_MONTHLY_FEE)}/month to renew.
+            </p>
+          )}
 
           <form className="register-service-form card" onSubmit={handleSubmit}>
             <div className="form-group">
@@ -171,34 +178,38 @@ export default function RegisterService() {
               {errors.bio && <span className="form-error">{errors.bio}</span>}
             </div>
 
-            <div className="register-pricing card">
-              <h3>Pricing</h3>
-              <div className="pricing-row">
-                <span>One-time registration (includes 1 month active)</span>
-                <strong>{formatINR(SERVICE_REGISTRATION_FEE)}</strong>
+            {!FREE_PUBLISH_MODE && (
+              <div className="register-pricing card">
+                <h3>Pricing</h3>
+                <div className="pricing-row">
+                  <span>One-time registration (includes 1 month active)</span>
+                  <strong>{formatINR(SERVICE_REGISTRATION_FEE)}</strong>
+                </div>
+                <div className="pricing-row">
+                  <span>Monthly renewal (products + services)</span>
+                  <strong>{formatINR(SERVICE_MONTHLY_FEE)}/mo</strong>
+                </div>
               </div>
-              <div className="pricing-row">
-                <span>Monthly renewal (products + services)</span>
-                <strong>{formatINR(SERVICE_MONTHLY_FEE)}/mo</strong>
-              </div>
-            </div>
+            )}
 
             <button type="submit" className="btn btn-primary register-submit">
-              Pay {formatINR(SERVICE_REGISTRATION_FEE)} & Register
+              {FREE_PUBLISH_MODE ? 'Register' : `Pay ${formatINR(SERVICE_REGISTRATION_FEE)} & Register`}
             </button>
           </form>
         </motion.div>
       </div>
 
-      <PaymentModal
-        isOpen={showPayment}
-        onClose={() => setShowPayment(false)}
-        onSuccess={handlePaymentSuccess}
-        amount={SERVICE_REGISTRATION_FEE}
-        title="Registration Fee"
-        description="Includes 1 month active listing for your products and professional profile"
-        successText="Registration complete!"
-      />
+      {!FREE_PUBLISH_MODE && (
+        <PaymentModal
+          isOpen={showPayment}
+          onClose={() => setShowPayment(false)}
+          onSuccess={handlePaymentSuccess}
+          amount={SERVICE_REGISTRATION_FEE}
+          title="Registration Fee"
+          description="Includes 1 month active listing for your products and professional profile"
+          successText="Registration complete!"
+        />
+      )}
 
       <Footer />
     </div>

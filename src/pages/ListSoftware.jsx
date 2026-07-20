@@ -6,6 +6,7 @@ import Footer from '../components/Footer';
 import PaymentModal from '../components/PaymentModal';
 import { useAuth } from '../hooks/useAuth';
 import { addSoftwareListing, activateSubscription } from '../utils/storage';
+import { FREE_PUBLISH_MODE } from '../utils/constants';
 import { validateEmail, validateIndianPhone, validateUrl, normalizeUrl } from '../utils/validation';
 import { CATEGORIES } from '../utils/categories';
 import { LICENSES } from '../utils/constants';
@@ -94,6 +95,10 @@ export default function ListSoftware() {
   };
 
   const handlePublish = () => {
+    if (FREE_PUBLISH_MODE) {
+      handlePaymentSuccess();
+      return;
+    }
     setShowPayment(true);
   };
 
@@ -138,7 +143,7 @@ export default function ListSoftware() {
             Create a <span className="gradient-text">Product</span>
           </h1>
           <p className="section-subtitle list-subtitle">
-            Publish your software to your Profinder storefront.
+            Publish your software to your Profinds storefront.
           </p>
 
           <div className="list-steps">
@@ -293,12 +298,14 @@ export default function ListSoftware() {
                 )}
               </div>
 
-              <div className="list-publish-notice card">
-                <div>
-                  <strong>Ready to publish?</strong>
-                  <p>Complete payment to make your listing live on the marketplace.</p>
+              {!FREE_PUBLISH_MODE && (
+                <div className="list-publish-notice card">
+                  <div>
+                    <strong>Ready to publish?</strong>
+                    <p>Complete payment to make your listing live on the marketplace.</p>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="list-actions">
                 <button className="btn btn-outline" onClick={() => setStep(1)}>Back</button>
@@ -311,15 +318,17 @@ export default function ListSoftware() {
         </motion.div>
       </div>
 
-      <PaymentModal
-        isOpen={showPayment}
-        onClose={() => setShowPayment(false)}
-        onSuccess={handlePaymentSuccess}
-        amount={100}
-        title="Listing Fee"
-        description="Includes 1 month active listing for your product and professional profile"
-        successText="Listing published!"
-      />
+      {!FREE_PUBLISH_MODE && (
+        <PaymentModal
+          isOpen={showPayment}
+          onClose={() => setShowPayment(false)}
+          onSuccess={handlePaymentSuccess}
+          amount={100}
+          title="Listing Fee"
+          description="Includes 1 month active listing for your product and professional profile"
+          successText="Listing published!"
+        />
+      )}
 
       <Footer />
     </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -8,35 +8,43 @@ import SaveButton from '../components/SaveButton';
 import ProductCard from '../components/ProductCard';
 import ReviewsSection from '../components/ReviewsSection';
 import MessageModal from '../components/MessageModal';
+import PaymentModal from '../components/PaymentModal';
 import VerifiedBadge from '../components/VerifiedBadge';
 import StarRating from '../components/StarRating';
 import {
   getSoftwareById,
   getSoftwareListings,
-  getUserById,
+  getSellerForListing,
   trackListingContact,
   getProductRating,
   getBundlesBySeller,
+  hasPurchased,
+  recordPurchase,
 } from '../utils/storage';
 import { formatINR, formatIndianPhone } from '../utils/validation';
 import { useAuth } from '../hooks/useAuth';
-import { Mail, Phone, ExternalLink, MessageCircle } from 'lucide-react';
+import { Mail, Phone, ExternalLink, MessageCircle, ShoppingBag, Check } from 'lucide-react';
 import './SoftwareDetail.css';
 import '../components/VerifiedBadge.css';
 
 export default function SoftwareDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [software, setSoftware] = useState(() => getSoftwareById(id));
   const [showMessage, setShowMessage] = useState(false);
-  const seller = software ? getUserById(software.sellerId) : null;
+  const [showPayment, setShowPayment] = useState(false);
+  const [owned, setOwned] = useState(() => (user ? hasPurchased(user.id, id) : false));
+  const seller = software ? getSellerForListing(software) : null;
   const rating = software ? getProductRating(software.id) : { avg: 0, count: 0 };
+  const isOwnListing = user?.id === software?.sellerId;
 
   useEffect(() => {
     setSoftware(getSoftwareById(id) || null);
-  }, [id]);
+    setOwned(user ? hasPurchased(user.id, id) : false);
+  }, [id, user]);
 
-  if (!software || !seller) {
+  if (!software) {
     return (
       <div className="detail-page">
         <Navbar />
@@ -54,6 +62,28 @@ export default function SoftwareDetail() {
 
   const bundles = getBundlesBySeller(software.sellerId).filter((b) => b.productIds.includes(software.id));
   const isFeatured = software.featured && software.featuredUntil && new Date(software.featuredUntil) > new Date();
+
+  const handleBuy = () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    setShowPayment(true);
+  };
+
+  const handlePurchaseSuccess = () => {
+    recordPurchase({
+      userId: user.id,
+      productId: software.id,
+      price: software.price,
+      productTitle: software.title,
+      sellerId: software.sellerId,
+      sellerName: software.sellerName,
+      license: software.license,
+    });
+    setOwned(true);
+    setShowPayment(false);
+  };
 
   return (
     <div className="detail-page">
@@ -137,6 +167,18 @@ export default function SoftwareDetail() {
 
               {software.category && <span className="detail-category">{software.category}</span>}
 
+              {owned ? (
+                <div className="detail-owned">
+                  <Check size={18} />
+                  <span>In your purchase library</span>
+                  <Link to="/library" className="btn btn-outline btn-sm">View library</Link>
+                </div>
+              ) : !isOwnListing && (
+                <button type="button" className="btn btn-primary detail-buy-btn" onClick={handleBuy}>
+                  <ShoppingBag size={18} /> Buy Now
+                </button>
+              )}
+
               {user && user.id !== software.sellerId ? (
                 <button type="button" className="btn btn-primary detail-want-btn" onClick={() => setShowMessage(true)}>
                   <MessageCircle size={18} /> Message Seller
@@ -148,12 +190,16 @@ export default function SoftwareDetail() {
               )}
 
               <div className="detail-contact-row">
-                <a href={`mailto:${software.contactEmail}`} className="btn btn-outline" onClick={() => trackListingContact(software.id)}>
-                  <Mail size={16} /> Email
-                </a>
-                <a href={`tel:${software.contactPhone.replace(/\s/g, '')}`} className="btn btn-outline" onClick={() => trackListingContact(software.id)}>
-                  <Phone size={16} /> Call
-                </a>
+                {software.contactEmail && (
+                  <a href={`mailto:${software.contactEmail}`} className="btn btn-outline" onClick={() => trackListingContact(software.id)}>
+                    <Mail size={16} /> Email
+                  </a>
+                )}
+                {software.contactPhone && (
+                  <a href={`tel:${software.contactPhone.replace(/\s/g, '')}`} className="btn btn-outline" onClick={() => trackListingContact(software.id)}>
+                    <Phone size={16} /> Call
+                  </a>
+                )}
               </div>
 
               <div className="detail-sidebar-meta">
@@ -161,8 +207,8 @@ export default function SoftwareDetail() {
               </div>
 
               <div className="detail-contact-info">
-                <p><strong>Email:</strong> {software.contactEmail}</p>
-                <p><strong>Phone:</strong> {formatIndianPhone(software.contactPhone)}</p>
+                {software.contactEmail && <p><strong>Email:</strong> {software.contactEmail}</p>}
+                {software.contactPhone && <p><strong>Phone:</strong> {formatIndianPhone(software.contactPhone)}</p>}
               </div>
             </div>
 
@@ -197,6 +243,16 @@ export default function SoftwareDetail() {
         onClose={() => setShowMessage(false)}
         seller={seller}
         product={software}
+      />
+
+      <PaymentModal
+        isOpen={showPayment}
+        onClose={() => setShowPayment(false)}
+        onSuccess={handlePurchaseSuccess}
+        amount={software.price}
+        title="Complete Purchase"
+        description={`Buy "${software.title}" and add it to your library`}
+        successText="Purchase successful!"
       />
 
       <Footer />

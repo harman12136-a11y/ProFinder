@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -7,13 +6,16 @@ import CategoryMarquee from '../components/CategoryMarquee';
 import ProductCard from '../components/ProductCard';
 import LandingPaths from '../components/LandingPaths';
 import { getFeaturedListings } from '../utils/storage';
+import { useData } from '../hooks/useData';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import './Landing.css';
 
 export default function Landing() {
   const { user } = useAuth();
-  const featured = useMemo(() => getFeaturedListings(), []);
+  const { version } = useData();
+  void version;
+  const featured = getFeaturedListings();
 
   return (
     <div className="landing">
@@ -34,7 +36,7 @@ export default function Landing() {
               <span className="gradient-text">Sell it everywhere in India</span>
             </h1>
             <p className="hero-subtitle">
-              Profinder helps Indian developers sell code, templates, and digital products.
+              Profinds helps Indian developers sell code, templates, and digital products.
               List once, get discovered, and connect with buyers directly.
             </p>
           </motion.div>

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { getUserById } from '../utils/storage';
+import { getSellerForService } from '../utils/storage';
 import { SERVICE_PROFESSIONS } from '../utils/constants';
 import VerifiedBadge from './VerifiedBadge';
 import './ServiceCard.css';
@@ -12,7 +12,7 @@ function getProfessionLabel(service) {
 }
 
 export default function ServiceCard({ service, index = 0 }) {
-  const user = getUserById(service.userId);
+  const user = getSellerForService(service);
 
   return (
     <motion.article

@@ -5,7 +5,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useAuth } from '../hooks/useAuth';
 import { getServiceByUserId, updateServiceProfile, deleteServiceProfile } from '../utils/storage';
-import { SERVICE_PROFESSIONS } from '../utils/constants';
+import { SERVICE_PROFESSIONS, FREE_PUBLISH_MODE } from '../utils/constants';
 import './RegisterService.css';
 
 export default function ManageService() {
@@ -25,7 +25,7 @@ export default function ManageService() {
   const [errors, setErrors] = useState({});
   const [saved, setSaved] = useState(false);
 
-  if (!existing?.registrationPaid) {
+  if (!existing || (!FREE_PUBLISH_MODE && !existing.registrationPaid)) {
     return <Navigate to="/register-service" replace />;
   }
 

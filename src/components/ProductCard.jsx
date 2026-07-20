@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { formatINR } from '../utils/validation';
-import { getUserById, getProductRating } from '../utils/storage';
+import { getSellerForListing, getProductRating } from '../utils/storage';
 import SaveButton from './SaveButton';
 import VerifiedBadge from './VerifiedBadge';
 import StarRating from './StarRating';
@@ -15,7 +15,7 @@ function isFeatured(product) {
 export default function ProductCard({ product, index = 0 }) {
   const navigate = useNavigate();
   const thumbnail = product.photos?.[0] || null;
-  const seller = getUserById(product.sellerId);
+  const seller = getSellerForListing(product);
   const { avg, count } = getProductRating(product.id);
 
   return (

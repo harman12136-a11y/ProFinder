@@ -113,6 +113,9 @@ export default function Messages() {
           <aside className="messages-threads">
             {threads.length > 0 ? threads.map((thread) => {
               const other = getUserById(thread.otherId);
+              const otherName = other?.name
+                || (thread.last.fromUserId === thread.otherId ? thread.last.fromUserName : null)
+                || 'User';
               const key = `${thread.otherId}-${thread.productId || 'general'}`;
               return (
                 <button
@@ -121,7 +124,7 @@ export default function Messages() {
                   className={`thread-item ${activeKey === key ? 'active' : ''}`}
                   onClick={() => openThread(thread)}
                 >
-                  <strong>{other?.name || 'User'}</strong>
+                  <strong>{otherName}</strong>
                   {thread.productTitle && <span className="thread-product">{thread.productTitle}</span>}
                   <p>{thread.last.body.slice(0, 60)}{thread.last.body.length > 60 ? '...' : ''}</p>
                   {thread.unread > 0 && <span className="thread-unread">{thread.unread}</span>}
@@ -137,7 +140,11 @@ export default function Messages() {
               <>
                 <div className="messages-panel-header">
                   <div>
-                    <h2>{getUserById(active.otherId)?.name}</h2>
+                    <h2>
+                      {getUserById(active.otherId)?.name
+                        || threads.find((t) => t.otherId === active.otherId)?.last?.fromUserName
+                        || 'User'}
+                    </h2>
                     {active.productTitle && (
                       <Link to={`/software/${active.productId}`}>{active.productTitle}</Link>
                     )}

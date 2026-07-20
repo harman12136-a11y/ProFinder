@@ -4,13 +4,13 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import Navbar from '../components/Navbar';
 import Logo from '../components/Logo';
-import { Mail, Lock, ArrowRight } from 'lucide-react';
+import { User, Lock, ArrowRight } from 'lucide-react';
 import './Auth.css';
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,7 +20,7 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      await login(email, password);
+      await login(username, password);
       navigate('/discover');
     } catch (err) {
       setError(err.message);
@@ -42,21 +42,22 @@ export default function Login() {
           <div className="auth-header">
             <Logo className="auth-logo" />
             <h1>Welcome Back</h1>
-            <p>Log in to your Profinder account</p>
+            <p>Log in to your Profinds account</p>
           </div>
 
           <form onSubmit={handleSubmit} className="auth-form">
             <div className="form-group">
-              <label htmlFor="email">Email</label>
+              <label htmlFor="username">Username</label>
               <div className="input-with-icon">
-                <Mail size={18} />
+                <User size={18} />
                 <input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="username"
+                  type="text"
+                  placeholder="your_username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   required
+                  autoComplete="username"
                 />
               </div>
             </div>
@@ -72,6 +73,7 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  autoComplete="current-password"
                 />
               </div>
             </div>

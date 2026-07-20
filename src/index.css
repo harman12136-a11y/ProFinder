@@ -216,6 +216,11 @@ video {
   background: var(--bg-card);
 }
 
+.btn-sm {
+  padding: 8px 14px;
+  font-size: 0.85rem;
+}
+
 .btn-google {
   background: white;
   color: #333;

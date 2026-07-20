@@ -9,6 +9,7 @@ import { getActiveServices } from '../utils/storage';
 import { SERVICE_PROFESSIONS } from '../utils/constants';
 import { recommendServices } from '../utils/recommend';
 import { useAuth } from '../hooks/useAuth';
+import { useData } from '../hooks/useData';
 import './Services.css';
 import '../components/ServiceCard.css';
 
@@ -19,10 +20,12 @@ const SORT_OPTIONS = [
 
 export default function Services() {
   const { user } = useAuth();
+  const { version } = useData();
+  void version;
   const [search, setSearch] = useState('');
   const [profession, setProfession] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
-  const services = useMemo(() => getActiveServices(), []);
+  const services = getActiveServices();
 
   const recommended = useMemo(
     () => recommendServices(services, user).slice(0, 3),
@@ -155,7 +158,7 @@ export default function Services() {
             ) : (
               <div className="services-empty">
                 <h3>No professionals found</h3>
-                <p>Be the first to register on Profinder.</p>
+                <p>Be the first to register on Profinds.</p>
                 {user ? (
                   <Link to="/register-service" className="btn btn-primary">Register Now</Link>
                 ) : (

@@ -14,7 +14,7 @@ import {
   getJobById, closeJob, deleteJob,
 } from '../utils/storage';
 import { formatINR } from '../utils/validation';
-import { FEATURE_DAYS, SERVICE_MONTHLY_FEE } from '../utils/constants';
+import { FEATURE_DAYS, SERVICE_MONTHLY_FEE, FREE_PUBLISH_MODE } from '../utils/constants';
 import { Plus, Package, Settings, Pencil, Trash2, Sparkles, Briefcase, Users, Lock, FileText } from 'lucide-react';
 import './Dashboard.css';
 
@@ -135,7 +135,7 @@ export default function Dashboard() {
               <div className="dashboard-main-actions">{tabActions[activeTab]}</div>
             </div>
 
-            {!subscriptionActive && activeTab === 'listings' && (
+            {!FREE_PUBLISH_MODE && !subscriptionActive && activeTab === 'listings' && (
               <div className="dashboard-banner">
                 <p>Your listings are hidden — subscription inactive.</p>
                 <button type="button" className="btn btn-primary" onClick={() => setShowRenew(true)}>
@@ -161,7 +161,7 @@ export default function Dashboard() {
                             <p>{listing.description.slice(0, 90)}...</p>
                             <div className="dashboard-listing-meta">
                               <span>{formatINR(listing.price)}</span>
-                              {!subscriptionActive && <span className="listing-hidden">Hidden</span>}
+                              {!FREE_PUBLISH_MODE && !subscriptionActive && <span className="listing-hidden">Hidden</span>}
                             </div>
                           </div>
                         </div>
@@ -289,15 +289,17 @@ export default function Dashboard() {
         productTitle={featureTarget?.title}
       />
 
-      <PaymentModal
-        isOpen={showRenew}
-        onClose={() => setShowRenew(false)}
-        onSuccess={handleRenewSuccess}
-        amount={SERVICE_MONTHLY_FEE}
-        title="Monthly Subscription"
-        description="Keep your products and professional profile active for 30 days"
-        successText="Subscription renewed!"
-      />
+      {!FREE_PUBLISH_MODE && (
+        <PaymentModal
+          isOpen={showRenew}
+          onClose={() => setShowRenew(false)}
+          onSuccess={handleRenewSuccess}
+          amount={SERVICE_MONTHLY_FEE}
+          title="Monthly Subscription"
+          description="Keep your products and professional profile active for 30 days"
+          successText="Subscription renewed!"
+        />
+      )}
 
       <Footer />
     </div>

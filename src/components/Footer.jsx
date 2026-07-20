@@ -13,7 +13,7 @@ export default function Footer() {
         <div className="page-container footer-inner">
           <div className="footer-brand">
             <Logo className="footer-logo" />
-            <span>Profinder</span>
+            <span>Profind</span>
           </div>
           <p className="footer-tagline">
             India&apos;s marketplace for code &amp; software. Built for Indian developers.
@@ -23,7 +23,7 @@ export default function Footer() {
             Feedback — what would you change?
           </button>
           <div className="footer-bottom">
-            <span>© 2026 Profinder. Made in India 🇮🇳</span>
+            <span>© 2026 Profinds. Made in India 🇮🇳</span>
           </div>
         </div>
       </footer>

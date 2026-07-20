@@ -5,14 +5,14 @@ import Footer from '../components/Footer';
 import ProductCard from '../components/ProductCard';
 import FollowButton from '../components/FollowButton';
 import VerifiedBadge from '../components/VerifiedBadge';
-import { getUserById, getUserListings, getCreatorStats, getBundlesBySeller } from '../utils/storage';
+import { getCreatorProfile, getUserListings, getCreatorStats, getBundlesBySeller } from '../utils/storage';
 import { formatINR } from '../utils/validation';
 import { Package, TrendingUp, Link2 } from 'lucide-react';
 import './CreatorProfile.css';
 
 export default function CreatorProfile() {
   const { id } = useParams();
-  const creator = getUserById(id);
+  const creator = getCreatorProfile(id);
   const products = getUserListings(id);
   const bundles = getBundlesBySeller(id);
   const stats = getCreatorStats(id);
@@ -48,7 +48,7 @@ export default function CreatorProfile() {
               <h1>{creator.name}</h1>
               <VerifiedBadge user={creator} size="lg" />
             </div>
-            <p>{creator.bio || 'Indian software creator on Profinder.'}</p>
+            <p>{creator.bio || 'Indian software creator on Profinds.'}</p>
             {skills.length > 0 && (
               <div className="creator-skills">
                 {skills.map((skill) => (

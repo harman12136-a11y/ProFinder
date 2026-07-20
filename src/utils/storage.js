@@ -1,9 +1,33 @@
-const USERS_KEY = 'profinder_users';
-const CURRENT_USER_KEY = 'profinder_current_user';
-const SOFTWARE_KEY = 'profinder_software';
-const LIBRARY_KEY = 'profinder_library';
-const FOLLOWING_KEY = 'profinder_following';
+import { FREE_PUBLISH_MODE } from './constants';
+import { getCache, isCacheHydrated, setCacheHydrated } from './dataCache';
+import {
+  backupToLocalStorage,
+  loadFromLocalStorage,
+  syncListing,
+  deleteListingFromSupabase,
+  syncMessage,
+  syncMessagesBatch,
+  syncReview,
+  syncBundle,
+  deleteBundleFromSupabase,
+  syncService,
+  deleteServiceFromSupabase,
+  syncJob,
+  deleteJobFromSupabase,
+  syncProposal,
+  syncProposals,
+  syncPurchase,
+  deletePurchaseFromSupabase,
+  syncSavedProduct,
+  syncFollow,
+  syncFeedbackItem,
+  syncFeedbackFlag,
+  syncListings,
+  syncJobs,
+} from './supabaseSync';
+
 const MESSAGES_KEY = 'profinder_messages';
+const CURRENT_USER_KEY = 'profinder_current_user';
 export { MESSAGES_KEY };
 
 const messageListeners = new Set();
@@ -16,35 +40,197 @@ export function subscribeMessages(listener) {
 function emitMessages() {
   messageListeners.forEach((listener) => listener());
 }
-const REVIEWS_KEY = 'profinder_reviews';
-const BUNDLES_KEY = 'profinder_bundles';
-const SERVICES_KEY = 'profinder_services';
-const FEEDBACK_KEY = 'profinder_feedback';
-const JOBS_KEY = 'profinder_jobs';
-const PROPOSALS_KEY = 'profinder_proposals';
 
-function read(key, fallback = []) {
-  try {
-    return JSON.parse(localStorage.getItem(key)) ?? fallback;
-  } catch {
-    return fallback;
+function ensureLoaded() {
+  if (!isCacheHydrated()) {
+    loadFromLocalStorage();
+    setCacheHydrated(true);
   }
 }
 
-function write(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+function persist() {
+  backupToLocalStorage();
+}
+
+function readListings() {
+  ensureLoaded();
+  return getCache().listings;
+}
+
+function writeListings(listings) {
+  getCache().listings = listings;
+  persist();
+  syncListings(listings);
+}
+
+function readMessages() {
+  ensureLoaded();
+  return getCache().messages;
+}
+
+function writeMessages(messages) {
+  getCache().messages = messages;
+  persist();
+  syncMessagesBatch(messages);
+}
+
+function readReviews() {
+  ensureLoaded();
+  return getCache().reviews;
+}
+
+function writeReviews(reviews) {
+  getCache().reviews = reviews;
+  persist();
+}
+
+function readBundles() {
+  ensureLoaded();
+  return getCache().bundles;
+}
+
+function writeBundles(bundles) {
+  getCache().bundles = bundles;
+  persist();
+}
+
+function readServices() {
+  ensureLoaded();
+  return getCache().services;
+}
+
+function writeServices(services) {
+  getCache().services = services;
+  persist();
+}
+
+function readJobs() {
+  ensureLoaded();
+  return getCache().jobs;
+}
+
+function writeJobs(jobs) {
+  getCache().jobs = jobs;
+  persist();
+  syncJobs(jobs);
+}
+
+function readProposals() {
+  ensureLoaded();
+  return getCache().proposals;
+}
+
+function writeProposals(proposals) {
+  getCache().proposals = proposals;
+  persist();
+  syncProposals(proposals);
+}
+
+function readPurchases() {
+  ensureLoaded();
+  return getCache().purchases;
+}
+
+function writePurchases(purchases) {
+  getCache().purchases = purchases;
+  persist();
+}
+
+function readLibrary() {
+  ensureLoaded();
+  return getCache().library;
+}
+
+function writeLibrary(library) {
+  getCache().library = library;
+  persist();
+}
+
+function readFollowing() {
+  ensureLoaded();
+  return getCache().following;
+}
+
+function writeFollowing(following) {
+  getCache().following = following;
+  persist();
+}
+
+function readFeedback() {
+  ensureLoaded();
+  return getCache().feedback;
+}
+
+function writeFeedback(feedback) {
+  getCache().feedback = feedback;
+  persist();
+}
+
+function readUsers() {
+  ensureLoaded();
+  return getCache().users;
+}
+
+function writeUsers(users) {
+  getCache().users = users;
+  persist();
 }
 
 export function getUsers() {
-  return read(USERS_KEY, []);
+  return readUsers();
 }
 
 export function saveUsers(users) {
-  write(USERS_KEY, users);
+  writeUsers(users);
 }
 
 export function getUserById(id) {
-  return getUsers().find((u) => u.id === id) || null;
+  if (!id) return null;
+  const found = getUsers().find((u) => u.id === id);
+  if (found) return found;
+  const current = getCurrentUser();
+  if (current?.id === id) return current;
+  return null;
+}
+
+export function getSellerForListing(listing) {
+  if (!listing) return null;
+  return getUserById(listing.sellerId) || {
+    id: listing.sellerId,
+    name: listing.sellerName || 'Creator',
+    verified: { email: false, phone: false, github: false },
+  };
+}
+
+export function getSellerForService(service) {
+  if (!service) return null;
+  return getUserById(service.userId) || {
+    id: service.userId,
+    name: service.name || 'Professional',
+    verified: { email: false, phone: false, github: false },
+  };
+}
+
+export function getCreatorProfile(userId) {
+  const user = getUserById(userId);
+  if (user) return user;
+
+  const listing = getUserListings(userId)[0];
+  if (listing) {
+    return {
+      id: userId,
+      name: listing.sellerName || 'Creator',
+      bio: '',
+      skills: [],
+      portfolio: [],
+      verified: { email: false, phone: false, github: false },
+    };
+  }
+
+  const service = getServiceByUserId(userId);
+  if (service) return getSellerForService(service);
+
+  return null;
 }
 
 export function getCurrentUser() {
@@ -64,7 +250,7 @@ export function setCurrentUser(user) {
 }
 
 export function getSoftwareListings() {
-  return read(SOFTWARE_KEY, []);
+  return readListings();
 }
 
 export function getVisibleListings() {
@@ -72,7 +258,7 @@ export function getVisibleListings() {
 }
 
 export function saveSoftwareListings(listings) {
-  write(SOFTWARE_KEY, listings);
+  writeListings(listings);
 }
 
 export function clearDemoListings() {
@@ -84,22 +270,21 @@ export function clearDemoListings() {
 }
 
 export function addSoftwareListing(listing) {
-  const listings = getSoftwareListings();
-  listings.unshift({
-    sales: 0,
-    contacts: 0,
-    ...listing,
-  });
-  saveSoftwareListings(listings);
-  return listing;
+  const listings = readListings();
+  const record = { sales: 0, contacts: 0, ...listing };
+  listings.unshift(record);
+  writeListings(listings);
+  syncListing(record);
+  return record;
 }
 
 export function updateSoftwareListing(id, updates) {
-  const listings = getSoftwareListings();
+  const listings = readListings();
   const idx = listings.findIndex((s) => s.id === id);
   if (idx === -1) return null;
   listings[idx] = { ...listings[idx], ...updates };
-  saveSoftwareListings(listings);
+  writeListings(listings);
+  syncListing(listings[idx]);
   return listings[idx];
 }
 
@@ -112,27 +297,30 @@ export function getUserListings(userId) {
 }
 
 export function deleteSoftwareListing(id) {
-  const listings = getSoftwareListings().filter((s) => s.id !== id);
-  saveSoftwareListings(listings);
+  const listings = readListings().filter((s) => s.id !== id);
+  writeListings(listings);
+  deleteListingFromSupabase(id);
 
-  const library = read(LIBRARY_KEY, {});
+  const library = readLibrary();
   Object.keys(library).forEach((userId) => {
     library[userId] = library[userId].filter((itemId) => itemId !== id);
+    syncSavedProduct(userId, library[userId]);
   });
-  write(LIBRARY_KEY, library);
+  writeLibrary(library);
 }
 
 export function getLibrary(userId) {
-  const library = read(LIBRARY_KEY, {});
+  const library = readLibrary();
   return library[userId] || [];
 }
 
 export function toggleLibraryItem(userId, productId) {
-  const library = read(LIBRARY_KEY, {});
+  const library = readLibrary();
   const items = library[userId] || [];
   const exists = items.includes(productId);
-  library[userId] = exists ? items.filter((id) => id !== productId) : [...items, productId];
-  write(LIBRARY_KEY, library);
+  library[userId] = exists ? items.filter((pid) => pid !== productId) : [...items, productId];
+  writeLibrary(library);
+  syncSavedProduct(userId, library[userId]);
   return !exists;
 }
 
@@ -145,18 +333,73 @@ export function getSavedListings(userId) {
   return getSoftwareListings().filter((s) => ids.includes(s.id));
 }
 
+export function getPurchases(userId) {
+  return readPurchases()
+    .filter((p) => p.userId === userId)
+    .sort((a, b) => new Date(b.purchasedAt) - new Date(a.purchasedAt));
+}
+
+export function getPurchaseLibrary(userId) {
+  return getPurchases(userId).map((purchase) => ({
+    purchase,
+    product: getSoftwareById(purchase.productId) || null,
+  }));
+}
+
+export function hasPurchased(userId, productId) {
+  return readPurchases().some((p) => p.userId === userId && p.productId === productId);
+}
+
+export function recordPurchase({ userId, productId, price, productTitle, sellerId, sellerName, license }) {
+  const all = readPurchases();
+  if (all.some((p) => p.userId === userId && p.productId === productId)) {
+    throw new Error('You already own this product');
+  }
+
+  const purchase = {
+    id: crypto.randomUUID(),
+    userId,
+    productId,
+    price,
+    productTitle,
+    sellerId,
+    sellerName,
+    license: license || '',
+    purchasedAt: new Date().toISOString(),
+  };
+  all.push(purchase);
+  writePurchases(all);
+  syncPurchase(purchase);
+
+  const listing = getSoftwareById(productId);
+  if (listing) {
+    updateSoftwareListing(productId, { sales: (listing.sales || 0) + 1 });
+  }
+  return purchase;
+}
+
+export function removePurchase(userId, purchaseId) {
+  const all = readPurchases();
+  const next = all.filter((p) => !(p.id === purchaseId && p.userId === userId));
+  if (next.length === all.length) return false;
+  writePurchases(next);
+  deletePurchaseFromSupabase(purchaseId);
+  return true;
+}
+
 export function getFollowing(userId) {
-  const following = read(FOLLOWING_KEY, {});
+  const following = readFollowing();
   return following[userId] || [];
 }
 
 export function toggleFollow(userId, creatorId) {
   if (userId === creatorId) return false;
-  const following = read(FOLLOWING_KEY, {});
+  const following = readFollowing();
   const list = following[userId] || [];
   const exists = list.includes(creatorId);
   following[userId] = exists ? list.filter((id) => id !== creatorId) : [...list, creatorId];
-  write(FOLLOWING_KEY, following);
+  writeFollowing(following);
+  syncFollow(userId, following[userId]);
   return !exists;
 }
 
@@ -182,7 +425,7 @@ export function getCreatorStats(userId) {
 export function trackListingContact(id) {
   const listing = getSoftwareById(id);
   if (!listing) return;
-  updateSoftwareListing(id, { contacts: (listing.contacts || 0) + 1, sales: (listing.sales || 0) + 1 });
+  updateSoftwareListing(id, { contacts: (listing.contacts || 0) + 1 });
 }
 
 export function getFeaturedListings() {
@@ -197,11 +440,11 @@ export function featureListing(id, days = 7) {
 }
 
 export function getMessages(userId) {
-  return read(MESSAGES_KEY, []).filter((m) => m.fromUserId === userId || m.toUserId === userId);
+  return readMessages().filter((m) => m.fromUserId === userId || m.toUserId === userId);
 }
 
 export function getConversation(userId, otherUserId, productId = null) {
-  return read(MESSAGES_KEY, [])
+  return readMessages()
     .filter((m) => {
       const between = (m.fromUserId === userId && m.toUserId === otherUserId)
         || (m.fromUserId === otherUserId && m.toUserId === userId);
@@ -211,7 +454,7 @@ export function getConversation(userId, otherUserId, productId = null) {
 }
 
 export function sendMessage({ fromUserId, fromUserName, toUserId, productId, productTitle, subject, body }) {
-  const messages = read(MESSAGES_KEY, []);
+  const messages = readMessages();
   const msg = {
     id: crypto.randomUUID(),
     fromUserId,
@@ -225,27 +468,29 @@ export function sendMessage({ fromUserId, fromUserName, toUserId, productId, pro
     createdAt: new Date().toISOString(),
   };
   messages.push(msg);
-  write(MESSAGES_KEY, messages);
+  writeMessages(messages);
+  syncMessage(msg);
   if (productId) trackListingContact(productId);
   emitMessages();
   return msg;
 }
 
 export function markMessagesRead(userId, otherUserId) {
-  const messages = read(MESSAGES_KEY, []);
+  const messages = readMessages();
   messages.forEach((m) => {
     if (m.toUserId === userId && m.fromUserId === otherUserId) m.read = true;
   });
-  write(MESSAGES_KEY, messages);
+  writeMessages(messages);
+  syncMessagesBatch(messages);
   emitMessages();
 }
 
 export function getUnreadCount(userId) {
-  return read(MESSAGES_KEY, []).filter((m) => m.toUserId === userId && !m.read).length;
+  return readMessages().filter((m) => m.toUserId === userId && !m.read).length;
 }
 
 export function getReviews(productId) {
-  return read(REVIEWS_KEY, []).filter((r) => r.productId === productId);
+  return readReviews().filter((r) => r.productId === productId);
 }
 
 export function getProductRating(productId) {
@@ -256,7 +501,7 @@ export function getProductRating(productId) {
 }
 
 export function addReview({ productId, userId, userName, rating, comment }) {
-  const reviews = read(REVIEWS_KEY, []);
+  const reviews = readReviews();
   if (reviews.find((r) => r.productId === productId && r.userId === userId)) {
     throw new Error('You already reviewed this product');
   }
@@ -270,12 +515,13 @@ export function addReview({ productId, userId, userName, rating, comment }) {
     createdAt: new Date().toISOString(),
   };
   reviews.push(review);
-  write(REVIEWS_KEY, reviews);
+  writeReviews(reviews);
+  syncReview(review);
   return review;
 }
 
 export function getBundles() {
-  return read(BUNDLES_KEY, []);
+  return readBundles();
 }
 
 export function getBundlesBySeller(sellerId) {
@@ -287,14 +533,16 @@ export function getBundleById(id) {
 }
 
 export function addBundle(bundle) {
-  const bundles = getBundles();
+  const bundles = readBundles();
   bundles.unshift(bundle);
-  write(BUNDLES_KEY, bundles);
+  writeBundles(bundles);
+  syncBundle(bundle);
   return bundle;
 }
 
 export function deleteBundle(id) {
-  write(BUNDLES_KEY, getBundles().filter((b) => b.id !== id));
+  writeBundles(readBundles().filter((b) => b.id !== id));
+  deleteBundleFromSupabase(id);
 }
 
 export function verifyUserField(userId, field, extra = {}) {
@@ -329,7 +577,7 @@ export function updateUserProfile(userId, updates) {
 }
 
 export function getServices() {
-  return read(SERVICES_KEY, []);
+  return readServices();
 }
 
 export function getServiceByUserId(userId) {
@@ -337,6 +585,7 @@ export function getServiceByUserId(userId) {
 }
 
 export function isSubscriptionActive(userId) {
+  if (FREE_PUBLISH_MODE) return true;
   const user = getUserById(userId);
   if (!user?.subscriptionExpiresAt) return false;
   return new Date(user.subscriptionExpiresAt) > new Date();
@@ -357,6 +606,7 @@ export function renewSubscription(userId, days = 30) {
 }
 
 export function isServiceActive(service) {
+  if (FREE_PUBLISH_MODE) return Boolean(service);
   if (!service?.registrationPaid) return false;
   return isSubscriptionActive(service.userId);
 }
@@ -366,14 +616,15 @@ export function getActiveServices() {
 }
 
 export function saveService(service) {
-  const services = getServices();
+  const services = readServices();
   const idx = services.findIndex((s) => s.userId === service.userId);
   if (idx === -1) {
     services.unshift(service);
   } else {
     services[idx] = { ...services[idx], ...service };
   }
-  write(SERVICES_KEY, services);
+  writeServices(services);
+  syncService(service);
   return service;
 }
 
@@ -401,7 +652,8 @@ export function updateServiceProfile(userId, updates) {
 }
 
 export function deleteServiceProfile(userId) {
-  write(SERVICES_KEY, getServices().filter((s) => s.userId !== userId));
+  writeServices(readServices().filter((s) => s.userId !== userId));
+  deleteServiceFromSupabase(userId);
 }
 
 export function renewServiceSubscription(userId, days = 30) {
@@ -409,32 +661,38 @@ export function renewServiceSubscription(userId, days = 30) {
 }
 
 export function addFeedback({ userId, userName, email, message }) {
-  const feedback = read(FEEDBACK_KEY, []);
-  feedback.unshift({
+  const feedback = readFeedback();
+  const item = {
     id: crypto.randomUUID(),
     userId: userId || null,
     userName: userName || 'Anonymous',
     email: email || null,
     message,
     createdAt: new Date().toISOString(),
-  });
-  write(FEEDBACK_KEY, feedback);
+  };
+  feedback.unshift(item);
+  writeFeedback(feedback);
+  syncFeedbackItem(item);
   if (userId) {
+    getCache().feedbackFlags[userId] = true;
+    syncFeedbackFlag(userId);
     localStorage.setItem(`profinder_feedback_${userId}`, 'true');
   }
 }
 
 export function hasSubmittedFeedback(userId) {
   if (!userId) return false;
+  ensureLoaded();
+  if (getCache().feedbackFlags[userId]) return true;
   return localStorage.getItem(`profinder_feedback_${userId}`) === 'true';
 }
 
 export function getFeedback() {
-  return read(FEEDBACK_KEY, []);
+  return readFeedback();
 }
 
 export function getJobs() {
-  return read(JOBS_KEY, []);
+  return readJobs();
 }
 
 export function getOpenJobs() {
@@ -450,7 +708,7 @@ export function getJobsByPoster(userId) {
 }
 
 export function addJob(job) {
-  const jobs = getJobs();
+  const jobs = readJobs();
   const record = {
     id: crypto.randomUUID(),
     status: 'open',
@@ -459,22 +717,25 @@ export function addJob(job) {
     createdAt: new Date().toISOString(),
   };
   jobs.unshift(record);
-  write(JOBS_KEY, jobs);
+  writeJobs(jobs);
+  syncJob(record);
   return record;
 }
 
 export function updateJob(id, updates) {
-  const jobs = getJobs();
+  const jobs = readJobs();
   const idx = jobs.findIndex((j) => j.id === id);
   if (idx === -1) return null;
   jobs[idx] = { ...jobs[idx], ...updates };
-  write(JOBS_KEY, jobs);
+  writeJobs(jobs);
+  syncJob(jobs[idx]);
   return jobs[idx];
 }
 
 export function deleteJob(id) {
-  write(JOBS_KEY, getJobs().filter((j) => j.id !== id));
-  write(PROPOSALS_KEY, getAllProposals().filter((p) => p.jobId !== id));
+  writeJobs(readJobs().filter((j) => j.id !== id));
+  writeProposals(readProposals().filter((p) => p.jobId !== id));
+  deleteJobFromSupabase(id);
 }
 
 export function closeJob(id) {
@@ -486,7 +747,7 @@ export function reopenJob(id) {
 }
 
 function getAllProposals() {
-  return read(PROPOSALS_KEY, []);
+  return readProposals();
 }
 
 export function getProposalsForJob(jobId) {
@@ -530,7 +791,8 @@ export function addProposal({ jobId, freelancerId, freelancerName, coverLetter, 
     createdAt: new Date().toISOString(),
   };
   proposals.unshift(proposal);
-  write(PROPOSALS_KEY, proposals);
+  writeProposals(proposals);
+  syncProposal(proposal);
 
   const job = getJobById(jobId);
   if (job) {
@@ -550,7 +812,8 @@ export function withdrawProposal(id) {
   const idx = proposals.findIndex((p) => p.id === id);
   if (idx === -1) return null;
   proposals[idx].status = 'withdrawn';
-  write(PROPOSALS_KEY, proposals);
+  writeProposals(proposals);
+  syncProposal(proposals[idx]);
   return proposals[idx];
 }
 
@@ -565,7 +828,8 @@ export function hireForJob(jobId, proposalId) {
       else if (p.status === 'pending') p.status = 'rejected';
     }
   });
-  write(PROPOSALS_KEY, proposals);
+  writeProposals(proposals);
+  proposals.filter((p) => p.jobId === jobId).forEach(syncProposal);
   updateJob(jobId, { status: 'in-progress', hiredProposalId: proposalId });
 
   const job = getJobById(jobId);

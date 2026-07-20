@@ -1,12 +1,18 @@
 import { createContext, useState, useEffect, useCallback } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { getUsers, saveUsers, getCurrentUser, setCurrentUser } from '../utils/storage';
-import { validateEmail, validateIndianPhone } from '../utils/validation';
+import {
+  validateUsername,
+  validateIndianPhone,
+  normalizeUsername,
+  usernameToAuthEmail,
+} from '../utils/validation';
 import {
   fetchProfile,
   upsertProfile,
   updateProfile,
   updateLastLogin,
+  isUsernameTaken,
   profileToUser,
   userToProfileRow,
 } from '../utils/supabaseProfiles';
@@ -24,12 +30,20 @@ function syncUserToLocalCache(safeUser) {
   saveUsers(users);
 }
 
-function localLogin(email, password) {
+function localLogin(username, password) {
   const users = getUsers();
-  const found = users.find((u) => u.email === email && u.password === password);
-  if (!found) throw new Error('Invalid email or password');
+  const normalized = normalizeUsername(username);
+  const found = users.find(
+    (u) => (u.username === normalized || u.email === normalized) && u.password === password
+  );
+  if (!found) throw new Error('Invalid username or password');
   const { password: _, ...safeUser } = found;
   return safeUser;
+}
+
+function isLocalUsernameTaken(username) {
+  const normalized = normalizeUsername(username);
+  return getUsers().some((u) => u.username === normalized);
 }
 
 export function AuthProvider({ children }) {
@@ -40,6 +54,9 @@ export function AuthProvider({ children }) {
     setUser(safeUser);
     setCurrentUser(safeUser);
     syncUserToLocalCache(safeUser);
+    if (isSupabaseConfigured()) {
+      window.dispatchEvent(new Event('profinder-refresh'));
+    }
   }, []);
 
   useEffect(() => {
@@ -82,27 +99,31 @@ export function AuthProvider({ children }) {
     };
   }, [applyUser]);
 
-  const login = async (email, password) => {
+  const login = async (username, password) => {
     if (!isSupabaseConfigured()) {
-      const safeUser = localLogin(email, password);
+      const safeUser = localLogin(username, password);
       applyUser(safeUser);
       return safeUser;
     }
 
+    const authEmail = usernameToAuthEmail(username);
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.toLowerCase(),
+      email: authEmail,
       password,
     });
-    if (error) throw new Error(error.message === 'Invalid login credentials'
-      ? 'Invalid email or password'
-      : error.message);
+    if (error) {
+      throw new Error(error.message === 'Invalid login credentials'
+        ? 'Invalid username or password'
+        : error.message);
+    }
 
     let profile = await fetchProfile(data.user.id);
     if (!profile) {
       await upsertProfile(userToProfileRow({
         id: data.user.id,
+        username: normalizeUsername(username),
         name: data.user.user_metadata?.name || '',
-        email: data.user.email,
+        email: authEmail,
       }));
       profile = await fetchProfile(data.user.id);
     }
@@ -114,23 +135,28 @@ export function AuthProvider({ children }) {
   };
 
   const signup = async ({
-    name, email, phone, password, dob, survey, avatar, bio, skills, portfolio,
+    name, username, phone, password, dob, survey, avatar, bio, skills, portfolio,
   }) => {
     if (!name.trim()) throw new Error('Name is required');
-    if (!validateEmail(email)) throw new Error('Please enter a valid email');
+    if (!validateUsername(username)) {
+      throw new Error('Username must be 3–20 characters (letters, numbers, underscore only)');
+    }
     if (!validateIndianPhone(phone)) throw new Error('Please enter a valid Indian phone number');
     if (password.length < 6) throw new Error('Password must be at least 6 characters');
 
+    const normalizedUsername = normalizeUsername(username);
+    const authEmail = usernameToAuthEmail(normalizedUsername);
+
     if (!isSupabaseConfigured()) {
-      const users = getUsers();
-      if (users.find((u) => u.email === email)) {
-        throw new Error('An account with this email already exists');
+      if (isLocalUsernameTaken(normalizedUsername)) {
+        throw new Error('This username is already taken');
       }
 
       const newUser = {
         id: crypto.randomUUID(),
+        username: normalizedUsername,
         name: name.trim(),
-        email: email.toLowerCase(),
+        email: authEmail,
         phone,
         password,
         dob: dob || '',
@@ -144,6 +170,7 @@ export function AuthProvider({ children }) {
         createdAt: new Date().toISOString(),
       };
 
+      const users = getUsers();
       users.push(newUser);
       saveUsers(users);
       const { password: _, ...safeUser } = newUser;
@@ -151,17 +178,24 @@ export function AuthProvider({ children }) {
       return safeUser;
     }
 
+    if (await isUsernameTaken(normalizedUsername)) {
+      throw new Error('This username is already taken');
+    }
+
     const { data, error } = await supabase.auth.signUp({
-      email: email.toLowerCase(),
+      email: authEmail,
       password,
-      options: { data: { name: name.trim() } },
+      options: {
+        data: { name: name.trim(), username: normalizedUsername },
+      },
     });
     if (error) throw new Error(error.message);
 
     const profileRow = userToProfileRow({
       id: data.user.id,
+      username: normalizedUsername,
       name: name.trim(),
-      email: email.toLowerCase(),
+      email: authEmail,
       phone,
       dob,
       survey,
@@ -176,7 +210,7 @@ export function AuthProvider({ children }) {
     await upsertProfile(profileRow);
 
     if (!data.session) {
-      throw new Error('Account created! Check your email to confirm, then log in.');
+      throw new Error('Account created! You can now log in with your username.');
     }
 
     await updateLastLogin(data.user.id);
@@ -196,11 +230,13 @@ export function AuthProvider({ children }) {
   const updateUser = async (updates) => {
     const users = getUsers();
     const idx = users.findIndex((u) => u.id === user.id);
-    if (idx === -1) return;
+    const merged = { ...(idx >= 0 ? users[idx] : user), ...updates };
 
-    users[idx] = { ...users[idx], ...updates };
+    if (idx >= 0) users[idx] = merged;
+    else users.push({ ...merged, password: '' });
+
     saveUsers(users);
-    const { password: _, ...safeUser } = users[idx];
+    const { password: _, ...safeUser } = merged;
     setUser(safeUser);
     setCurrentUser(safeUser);
 

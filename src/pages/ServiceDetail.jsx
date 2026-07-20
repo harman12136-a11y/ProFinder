@@ -5,8 +5,8 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import VerifiedBadge from '../components/VerifiedBadge';
 import MessageModal from '../components/MessageModal';
-import { getServiceByUserId, getUserById, isServiceActive } from '../utils/storage';
-import { SERVICE_PROFESSIONS } from '../utils/constants';
+import { getServiceByUserId, getSellerForService, isServiceActive } from '../utils/storage';
+import { SERVICE_PROFESSIONS, FREE_PUBLISH_MODE } from '../utils/constants';
 import { formatIndianPhone } from '../utils/validation';
 import { useAuth } from '../hooks/useAuth';
 import { Award, Briefcase, GraduationCap, MessageCircle } from 'lucide-react';
@@ -22,7 +22,7 @@ export default function ServiceDetail() {
   const { userId } = useParams();
   const { user } = useAuth();
   const service = getServiceByUserId(userId);
-  const profileUser = getUserById(userId);
+  const profileUser = getSellerForService(service);
   const [showMessage, setShowMessage] = useState(false);
 
   if (!service || (!isServiceActive(service) && user?.id !== userId)) {
@@ -64,7 +64,7 @@ export default function ServiceDetail() {
                   </button>
                 )}
               </div>
-              {!isServiceActive(service) && user?.id === userId && (
+              {!FREE_PUBLISH_MODE && !isServiceActive(service) && user?.id === userId && (
                 <p className="service-detail-inactive">Your profile is hidden — renew subscription from Dashboard to go live.</p>
               )}
             </div>
@@ -100,14 +100,12 @@ export default function ServiceDetail() {
         </motion.div>
       </div>
 
-      {profileUser && (
-        <MessageModal
-          isOpen={showMessage}
-          onClose={() => setShowMessage(false)}
-          seller={profileUser}
-          product={{ title: `Service inquiry — ${getProfessionLabel(service)}` }}
-        />
-      )}
+      <MessageModal
+        isOpen={showMessage}
+        onClose={() => setShowMessage(false)}
+        seller={profileUser}
+        product={{ title: `Service inquiry — ${getProfessionLabel(service)}` }}
+      />
 
       <Footer />
     </div>

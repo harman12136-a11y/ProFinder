@@ -41,7 +41,7 @@ export default function LandingPaths() {
   const paths = getLandingPaths(user);
 
   return (
-    <section className="landing-paths" aria-label="Get started on Profinder">
+    <section className="landing-paths" aria-label="Get started on Profinds">
       <div className="page-container">
         <div className="landing-paths-grid">
           {paths.map((path, i) => (

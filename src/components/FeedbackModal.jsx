@@ -67,13 +67,13 @@ export default function FeedbackModal({ isOpen, onClose }) {
           ) : sent ? (
             <div className="feedback-thanks">
               <h2>Thank you!</h2>
-              <p>Your feedback helps us build a better Profinder for India.</p>
+              <p>Your feedback helps us build a better Profinds for India.</p>
             </div>
           ) : (
             <>
               <h2>What would you change?</h2>
               <p className="feedback-sub">
-                Profinder is early — your honest feedback shapes what we build next.
+                Profinds is early — your honest feedback shapes what we build next.
               </p>
               <form onSubmit={handleSubmit}>
                 {!user && (
@@ -94,7 +94,7 @@ export default function FeedbackModal({ isOpen, onClose }) {
                     id="feedback-message"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    placeholder="What confused you? What's missing? What would make Profinder better?"
+                    placeholder="What confused you? What's missing? What would make Profinds better?"
                     rows={5}
                   />
                   {error && <span className="form-error">{error}</span>}

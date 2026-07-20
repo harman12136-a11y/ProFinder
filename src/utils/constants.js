@@ -15,6 +15,9 @@ export const FEATURE_DAYS = 7;
 
 export const TRAFFIC_SOURCES = ['discover', 'homepage', 'direct', 'creator'];
 
+/** Temporarily hide listing/subscription fees — set false to restore payments */
+export const FREE_PUBLISH_MODE = true;
+
 export const SERVICE_REGISTRATION_FEE = 100;
 export const SERVICE_MONTHLY_FEE = 79;
 

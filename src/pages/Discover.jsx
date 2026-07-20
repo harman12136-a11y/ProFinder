@@ -9,10 +9,12 @@ import { getVisibleListings } from '../utils/storage';
 import { filterListings, sortListings, SORT_OPTIONS } from '../utils/categories';
 import { recommendListings } from '../utils/recommend';
 import { useAuth } from '../hooks/useAuth';
+import { useData } from '../hooks/useData';
 import './Discover.css';
 
 export default function Discover() {
   const { user } = useAuth();
+  const { version } = useData();
   const [listings, setListings] = useState([]);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
@@ -20,7 +22,7 @@ export default function Discover() {
 
   useEffect(() => {
     setListings(getVisibleListings());
-  }, []);
+  }, [version]);
 
   const filtered = useMemo(() => {
     const items = filterListings(listings, { search, category });

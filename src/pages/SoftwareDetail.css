@@ -153,6 +153,32 @@
   margin-bottom: 12px;
 }
 
+.detail-buy-btn {
+  width: 100%;
+  padding: 16px;
+  font-size: 1rem;
+  margin-bottom: 12px;
+}
+
+.detail-owned {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+  border-radius: var(--radius-sm);
+  background: var(--gradient-soft);
+  border: 1px solid var(--border-accent);
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.detail-owned .btn {
+  margin-left: auto;
+}
+
 .detail-contact-row {
   display: grid;
   grid-template-columns: 1fr 1fr;

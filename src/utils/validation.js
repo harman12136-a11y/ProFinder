@@ -21,6 +21,19 @@ export function validateEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+export function validateUsername(username) {
+  return /^[a-zA-Z0-9_]{3,20}$/.test(username.trim());
+}
+
+export function normalizeUsername(username) {
+  return username.trim().toLowerCase();
+}
+
+/** Internal auth email for Supabase — not shown to users */
+export function usernameToAuthEmail(username) {
+  return `${normalizeUsername(username)}@profinder.auth`;
+}
+
 export function normalizeUrl(url) {
   const trimmed = url.trim();
   if (!trimmed) return '';

@@ -5,7 +5,6 @@ import { useAuth } from '../hooks/useAuth';
 import Navbar from '../components/Navbar';
 import Logo from '../components/Logo';
 import {
-  Mail,
   Lock,
   User,
   Phone,
@@ -49,7 +48,7 @@ export default function Signup() {
   const [skillInput, setSkillInput] = useState('');
   const [portfolio, setPortfolio] = useState([]);
   const [work, setWork] = useState(emptyWork);
-  const [account, setAccount] = useState({ email: '', password: '' });
+  const [account, setAccount] = useState({ username: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const avatarInputRef = useRef(null);
@@ -165,7 +164,7 @@ export default function Signup() {
     try {
       await signup({
         name: fullName,
-        email: account.email,
+        username: account.username,
         phone,
         password: account.password,
         dob,
@@ -204,7 +203,7 @@ export default function Signup() {
           <div className="auth-header">
             <Logo className="auth-logo" />
             <h1>Create Account</h1>
-            <p>A few quick questions so we can tailor Profinder to you</p>
+            <p>A few quick questions so we can tailor Profinds to you</p>
           </div>
 
           <div className="survey-steps">
@@ -232,7 +231,7 @@ export default function Signup() {
             >
               {step === 0 && (
                 <div className="survey-section">
-                  <h2 className="survey-q">What brings you to Profinder?</h2>
+                  <h2 className="survey-q">What brings you to Profinds?</h2>
                   <div className="survey-options">
                     {SURVEY_PURPOSES.map((p) => (
                       <button
@@ -338,7 +337,7 @@ export default function Signup() {
               {step === 3 && (
                 <div className="survey-section signup-profile">
                   <h2 className="survey-q">Set up your profile</h2>
-                  <p className="survey-hint">This is how others will see you on Profinder.</p>
+                  <p className="survey-hint">This is how others will see you on Profinds.</p>
 
                   <div className="signup-avatar-field">
                     <div className="signup-avatar-preview">
@@ -457,16 +456,20 @@ export default function Signup() {
                 <form onSubmit={handleSubmit} className="survey-section auth-form">
                   <h2 className="survey-q">Set up your account</h2>
                   <div className="form-group">
-                    <label htmlFor="email">Email</label>
+                    <label htmlFor="username">Username</label>
                     <div className="input-with-icon">
-                      <Mail size={18} />
+                      <User size={18} />
                       <input
-                        id="email"
-                        type="email"
-                        placeholder="you@example.com"
-                        value={account.email}
-                        onChange={(e) => setAccount({ ...account, email: e.target.value })}
+                        id="username"
+                        type="text"
+                        placeholder="your_username"
+                        value={account.username}
+                        onChange={(e) => setAccount({ ...account, username: e.target.value })}
                         required
+                        minLength={3}
+                        maxLength={20}
+                        pattern="[a-zA-Z0-9_]+"
+                        autoComplete="username"
                       />
                     </div>
                   </div>

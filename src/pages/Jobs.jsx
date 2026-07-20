@@ -9,10 +9,12 @@ import { getOpenJobs, getProposalCount } from '../utils/storage';
 import { JOB_CATEGORIES, JOB_SORT_OPTIONS, JOB_BUDGET_TYPES } from '../utils/constants';
 import { recommendJobs } from '../utils/recommend';
 import { useAuth } from '../hooks/useAuth';
+import { useData } from '../hooks/useData';
 import './Jobs.css';
 
 export default function Jobs() {
   const { user } = useAuth();
+  const { version } = useData();
   const [jobs, setJobs] = useState([]);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
@@ -21,7 +23,7 @@ export default function Jobs() {
 
   useEffect(() => {
     setJobs(getOpenJobs());
-  }, []);
+  }, [version]);
 
   const filtered = useMemo(() => {
     let items = jobs.filter((job) => {
@@ -151,7 +153,7 @@ export default function Jobs() {
               <div className="jobs-empty">
                 <Briefcase size={40} />
                 <h3>No open jobs found</h3>
-                <p>{hasFilters ? 'Try adjusting your filters.' : 'Be the first to post a job on Profinder.'}</p>
+                <p>{hasFilters ? 'Try adjusting your filters.' : 'Be the first to post a job on Profinds.'}</p>
                 <Link to={user ? '/post-job' : '/login'} className="btn btn-primary"><Plus size={18} /> Post a Job</Link>
               </div>
             )}

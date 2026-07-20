@@ -53,7 +53,7 @@ export default function Navbar({ variant = 'default' }) {
         <div className="navbar-left">
           <Link to="/" className="navbar-brand">
             <Logo className="navbar-logo" />
-            <span className="navbar-name">Profinder</span>
+            <span className="navbar-name">Profind</span>
           </Link>
           {user && (
             <NavTab to="/dashboard" icon={LayoutDashboard} className="nav-dashboard">
