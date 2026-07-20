@@ -14,15 +14,17 @@ const emptyWork = { title: '', description: '', image: '', link: '' };
 export default function Settings() {
   const { user, updateUser } = useAuth();
   const [form, setForm] = useState({
-    name: user.name,
-    bio: user.bio || '',
-    phone: user.phone || '',
-    avatar: user.avatar || '',
-    skills: Array.isArray(user.skills) ? user.skills : [],
-    portfolio: Array.isArray(user.portfolio) ? user.portfolio : [],
+    name: user?.name || '',
+    bio: user?.bio || '',
+    phone: user?.phone || '',
+    avatar: user?.avatar || '',
+    skills: Array.isArray(user?.skills) ? user.skills : [],
+    portfolio: Array.isArray(user?.portfolio) ? user.portfolio : [],
   });
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
+  const [skillInput, setSkillInput] = useState('');
+  const [work, setWork] = useState(emptyWork);
   const avatarInputRef = useRef(null);
   const workInputRef = useRef(null);
 
@@ -108,10 +110,13 @@ export default function Settings() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!user) return;
     updateUserProfile(user.id, form);
     updateUser(form);
     setSaved(true);
   };
+
+  if (!user) return null;
 
   return (
     <div className="settings-page">
