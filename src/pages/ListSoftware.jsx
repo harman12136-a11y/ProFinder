@@ -18,6 +18,7 @@ export default function ListSoftware() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [showPayment, setShowPayment] = useState(false);
+  const [publishing, setPublishing] = useState(false);
   const [errors, setErrors] = useState({});
   const [form, setForm] = useState({
     title: '',
@@ -96,13 +97,13 @@ export default function ListSoftware() {
 
   const handlePublish = () => {
     if (FREE_PUBLISH_MODE) {
-      handlePaymentSuccess();
+      void handlePaymentSuccess();
       return;
     }
     setShowPayment(true);
   };
 
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = async () => {
     const listing = {
       id: crypto.randomUUID(),
       title: form.title.trim(),
@@ -124,10 +125,18 @@ export default function ListSoftware() {
       paid: true,
     };
 
-    addSoftwareListing(listing);
-    const updated = activateSubscription(user.id);
-    if (updated) updateUser({ subscriptionExpiresAt: updated.subscriptionExpiresAt });
-    navigate(`/software/${listing.id}`);
+    setPublishing(true);
+    setErrors({});
+    try {
+      await addSoftwareListing(listing);
+      const updated = activateSubscription(user.id);
+      if (updated) updateUser({ subscriptionExpiresAt: updated.subscriptionExpiresAt });
+      navigate(`/software/${listing.id}`);
+    } catch (err) {
+      setErrors({ publish: err.message || 'Failed to publish. Please try again.' });
+    } finally {
+      setPublishing(false);
+    }
   };
 
   return (
@@ -307,10 +316,12 @@ export default function ListSoftware() {
                 </div>
               )}
 
+              {errors.publish && <span className="form-error">{errors.publish}</span>}
+
               <div className="list-actions">
-                <button className="btn btn-outline" onClick={() => setStep(1)}>Back</button>
-                <button className="btn btn-primary" onClick={handlePublish}>
-                  Publish Listing
+                <button className="btn btn-outline" onClick={() => setStep(1)} disabled={publishing}>Back</button>
+                <button className="btn btn-primary" onClick={handlePublish} disabled={publishing}>
+                  {publishing ? 'Publishing…' : 'Publish Listing'}
                 </button>
               </div>
             </motion.div>

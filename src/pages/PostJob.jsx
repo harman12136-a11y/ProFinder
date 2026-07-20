@@ -15,6 +15,7 @@ export default function PostJob() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
   const [skillInput, setSkillInput] = useState('');
   const [form, setForm] = useState({
     title: '',
@@ -62,23 +63,32 @@ export default function PostJob() {
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-    const job = addJob({
-      posterId: user.id,
-      posterName: user.name,
-      title: form.title.trim(),
-      category: form.category,
-      description: form.description.trim(),
-      skills: form.skills,
-      budgetType: form.budgetType,
-      budget: Number(form.budget),
-      duration: form.duration,
-      experienceLevel: form.experienceLevel,
-      location: form.location.trim() || 'Remote',
-    });
-    navigate(`/job/${job.id}`);
+
+    setSubmitting(true);
+    setErrors({});
+    try {
+      const job = await addJob({
+        posterId: user.id,
+        posterName: user.name,
+        title: form.title.trim(),
+        category: form.category,
+        description: form.description.trim(),
+        skills: form.skills,
+        budgetType: form.budgetType,
+        budget: Number(form.budget),
+        duration: form.duration,
+        experienceLevel: form.experienceLevel,
+        location: form.location.trim() || 'Remote',
+      });
+      navigate(`/job/${job.id}`);
+    } catch (err) {
+      setErrors({ submit: err.message || 'Failed to post job. Please try again.' });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -171,7 +181,11 @@ export default function PostJob() {
               <input id="location" name="location" value={form.location} onChange={handleChange} placeholder="e.g. Remote, Bengaluru, Mumbai" />
             </div>
 
-            <button type="submit" className="btn btn-primary post-job-submit">Post Job</button>
+            {errors.submit && <span className="form-error">{errors.submit}</span>}
+
+            <button type="submit" className="btn btn-primary post-job-submit" disabled={submitting}>
+              {submitting ? 'Posting…' : 'Post Job'}
+            </button>
           </form>
         </motion.div>
       </div>

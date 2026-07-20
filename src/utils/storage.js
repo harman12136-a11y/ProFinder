@@ -27,6 +27,8 @@ import {
   syncSavedProducts,
   syncFollows,
   deleteUserContentFromSupabase,
+  ensureUserProfileSynced,
+  notifyRemoteDataChanged,
 } from './supabaseSync';
 
 const MESSAGES_KEY = 'profinder_messages';
@@ -63,7 +65,6 @@ function readListings() {
 function writeListings(listings) {
   getCache().listings = listings;
   persist();
-  syncListings(listings);
 }
 
 function readMessages() {
@@ -115,7 +116,6 @@ function readJobs() {
 function writeJobs(jobs) {
   getCache().jobs = jobs;
   persist();
-  syncJobs(jobs);
 }
 
 function readProposals() {
@@ -272,22 +272,27 @@ export function clearDemoListings() {
   }
 }
 
-export function addSoftwareListing(listing) {
+export async function addSoftwareListing(listing) {
+  const owner = getUserById(listing.sellerId) || getCurrentUser();
+  await ensureUserProfileSynced(owner);
+
   const listings = readListings();
   const record = { sales: 0, contacts: 0, ...listing };
   listings.unshift(record);
   writeListings(listings);
-  syncListing(record);
+  await syncListing(record);
+  notifyRemoteDataChanged();
   return record;
 }
 
-export function updateSoftwareListing(id, updates) {
+export async function updateSoftwareListing(id, updates) {
   const listings = readListings();
   const idx = listings.findIndex((s) => s.id === id);
   if (idx === -1) return null;
   listings[idx] = { ...listings[idx], ...updates };
   writeListings(listings);
-  syncListing(listings[idx]);
+  await syncListing(listings[idx]);
+  notifyRemoteDataChanged();
   return listings[idx];
 }
 
@@ -376,7 +381,7 @@ export function recordPurchase({ userId, productId, price, productTitle, sellerI
 
   const listing = getSoftwareById(productId);
   if (listing) {
-    updateSoftwareListing(productId, { sales: (listing.sales || 0) + 1 });
+    void updateSoftwareListing(productId, { sales: (listing.sales || 0) + 1 });
   }
   return purchase;
 }
@@ -428,7 +433,7 @@ export function getCreatorStats(userId) {
 export function trackListingContact(id) {
   const listing = getSoftwareById(id);
   if (!listing) return;
-  updateSoftwareListing(id, { contacts: (listing.contacts || 0) + 1 });
+  void updateSoftwareListing(id, { contacts: (listing.contacts || 0) + 1 });
 }
 
 export function getFeaturedListings() {
@@ -667,20 +672,27 @@ export function getActiveServices() {
   return getServices().filter(isServiceActive);
 }
 
-export function saveService(service) {
+export async function saveService(service) {
+  const owner = getUserById(service.userId) || getCurrentUser();
+  await ensureUserProfileSynced(owner);
+
   const services = readServices();
   const idx = services.findIndex((s) => s.userId === service.userId);
+  const record = idx === -1
+    ? service
+    : { ...services[idx], ...service };
   if (idx === -1) {
-    services.unshift(service);
+    services.unshift(record);
   } else {
-    services[idx] = { ...services[idx], ...service };
+    services[idx] = record;
   }
   writeServices(services);
-  syncService(service);
-  return service;
+  await syncService(record);
+  notifyRemoteDataChanged();
+  return record;
 }
 
-export function registerServiceProfile(data) {
+export async function registerServiceProfile(data) {
   const service = {
     id: crypto.randomUUID(),
     ...data,
@@ -688,12 +700,12 @@ export function registerServiceProfile(data) {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
-  saveService(service);
+  await saveService(service);
   activateSubscription(data.userId);
   return service;
 }
 
-export function updateServiceProfile(userId, updates) {
+export async function updateServiceProfile(userId, updates) {
   const service = getServiceByUserId(userId);
   if (!service) return null;
   return saveService({
@@ -759,7 +771,10 @@ export function getJobsByPoster(userId) {
   return getJobs().filter((j) => j.posterId === userId);
 }
 
-export function addJob(job) {
+export async function addJob(job) {
+  const owner = getUserById(job.posterId) || getCurrentUser();
+  await ensureUserProfileSynced(owner);
+
   const jobs = readJobs();
   const record = {
     id: crypto.randomUUID(),
@@ -770,17 +785,19 @@ export function addJob(job) {
   };
   jobs.unshift(record);
   writeJobs(jobs);
-  syncJob(record);
+  await syncJob(record);
+  notifyRemoteDataChanged();
   return record;
 }
 
-export function updateJob(id, updates) {
+export async function updateJob(id, updates) {
   const jobs = readJobs();
   const idx = jobs.findIndex((j) => j.id === id);
   if (idx === -1) return null;
   jobs[idx] = { ...jobs[idx], ...updates };
   writeJobs(jobs);
-  syncJob(jobs[idx]);
+  await syncJob(jobs[idx]);
+  notifyRemoteDataChanged();
   return jobs[idx];
 }
 
@@ -826,7 +843,10 @@ export function hasApplied(jobId, userId) {
   return getAllProposals().some((p) => p.jobId === jobId && p.freelancerId === userId);
 }
 
-export function addProposal({ jobId, freelancerId, freelancerName, coverLetter, bidAmount, timeline }) {
+export async function addProposal({ jobId, freelancerId, freelancerName, coverLetter, bidAmount, timeline }) {
+  const owner = getUserById(freelancerId) || getCurrentUser();
+  await ensureUserProfileSynced(owner);
+
   const proposals = getAllProposals();
   if (proposals.some((p) => p.jobId === jobId && p.freelancerId === freelancerId)) {
     throw new Error('You have already applied to this job');
@@ -844,7 +864,8 @@ export function addProposal({ jobId, freelancerId, freelancerName, coverLetter, 
   };
   proposals.unshift(proposal);
   writeProposals(proposals);
-  syncProposal(proposal);
+  await syncProposal(proposal);
+  notifyRemoteDataChanged();
 
   const job = getJobById(jobId);
   if (job) {

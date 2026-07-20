@@ -19,6 +19,7 @@ export default function EditSoftware() {
 
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(() => ({
     title: existing?.title || '',
     contactEmail: existing?.contactEmail || user?.email || '',
@@ -79,25 +80,33 @@ export default function EditSoftware() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
-    updateSoftwareListing(id, {
-      title: form.title.trim(),
-      contactEmail: form.contactEmail,
-      contactPhone: form.contactPhone,
-      url: normalizeUrl(form.url),
-      description: form.description.trim(),
-      about: form.about.trim(),
-      price: Number(form.price),
-      category: form.category,
-      license: form.license,
-      demoUrl: normalizeUrl(form.demoUrl),
-      builtWithIndia: form.builtWithIndia,
-      photos: form.photos,
-      videos: form.videos,
-      sellerName: user.name,
-      updatedAt: new Date().toISOString(),
-    });
-    navigate(`/software/${id}`);
+  const handleSave = async () => {
+    setSaving(true);
+    setErrors({});
+    try {
+      await updateSoftwareListing(id, {
+        title: form.title.trim(),
+        contactEmail: form.contactEmail,
+        contactPhone: form.contactPhone,
+        url: normalizeUrl(form.url),
+        description: form.description.trim(),
+        about: form.about.trim(),
+        price: Number(form.price),
+        category: form.category,
+        license: form.license,
+        demoUrl: normalizeUrl(form.demoUrl),
+        builtWithIndia: form.builtWithIndia,
+        photos: form.photos,
+        videos: form.videos,
+        sellerName: user.name,
+        updatedAt: new Date().toISOString(),
+      });
+      navigate(`/software/${id}`);
+    } catch (err) {
+      setErrors({ save: err.message || 'Failed to save listing. Please try again.' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -220,9 +229,13 @@ export default function EditSoftware() {
                   </div>
                 )}
               </div>
+              {errors.save && <span className="form-error">{errors.save}</span>}
+
               <div className="list-actions">
-                <button type="button" className="btn btn-outline" onClick={() => setStep(1)}>Back</button>
-                <button type="button" className="btn btn-primary" onClick={handleSave}>Save Changes</button>
+                <button type="button" className="btn btn-outline" onClick={() => setStep(1)} disabled={saving}>Back</button>
+                <button type="button" className="btn btn-primary" onClick={handleSave} disabled={saving}>
+                  {saving ? 'Saving…' : 'Save Changes'}
+                </button>
               </div>
             </motion.div>
           )}

@@ -24,6 +24,7 @@ export default function ManageService() {
   }));
   const [errors, setErrors] = useState({});
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   if (!existing || (!FREE_PUBLISH_MODE && !existing.registrationPaid)) {
     return <Navigate to="/register-service" replace />;
@@ -46,19 +47,29 @@ export default function ManageService() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-    updateServiceProfile(user.id, {
-      profession: form.profession,
-      professionOther: isOther ? form.professionOther.trim() : '',
-      degree: form.degree.trim(),
-      achievements: form.achievements.trim(),
-      bio: form.bio.trim(),
-      experience: form.experience.trim(),
-      servicesOffered: form.servicesOffered.trim(),
-    });
-    setSaved(true);
+
+    setSaving(true);
+    setSaved(false);
+    setErrors({});
+    try {
+      await updateServiceProfile(user.id, {
+        profession: form.profession,
+        professionOther: isOther ? form.professionOther.trim() : '',
+        degree: form.degree.trim(),
+        achievements: form.achievements.trim(),
+        bio: form.bio.trim(),
+        experience: form.experience.trim(),
+        servicesOffered: form.servicesOffered.trim(),
+      });
+      setSaved(true);
+    } catch (err) {
+      setErrors({ submit: err.message || 'Failed to save changes. Please try again.' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDelete = () => {
@@ -163,8 +174,12 @@ export default function ManageService() {
               {errors.bio && <span className="form-error">{errors.bio}</span>}
             </div>
 
+            {errors.submit && <span className="form-error">{errors.submit}</span>}
+
             <div className="manage-service-actions">
-              <button type="submit" className="btn btn-primary">Save Changes</button>
+              <button type="submit" className="btn btn-primary" disabled={saving}>
+                {saving ? 'Saving…' : 'Save Changes'}
+              </button>
               <button type="button" className="btn btn-outline" onClick={() => navigate('/dashboard')}>Cancel</button>
               <button type="button" className="btn btn-outline manage-delete" onClick={handleDelete}>Remove Profile</button>
             </div>

@@ -1,6 +1,40 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { profileToUser } from './supabaseProfiles';
+import { profileToUser, upsertProfile, userToProfileRow } from './supabaseProfiles';
 import { getCache, setCacheHydrated } from './dataCache';
+
+function throwIfError(result, context) {
+  if (result?.error) {
+    throw new Error(result.error.message || `Failed to sync ${context}`);
+  }
+}
+
+/** Ensure profile exists in Supabase before FK-linked writes (listings, jobs, services). */
+export async function ensureUserProfileSynced(user) {
+  if (!isSupabaseConfigured() || !user?.id) return;
+
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) throw new Error(sessionError.message);
+  if (!session) {
+    throw new Error('Please log in again to publish across devices.');
+  }
+
+  await upsertProfile(userToProfileRow(user));
+}
+
+export function notifyRemoteDataChanged() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('profinder-refresh'));
+  }
+}
+
+function mapRows(res, mapper, fallback = []) {
+  if (res.error) {
+    console.warn('Supabase hydrate warning:', res.error.message);
+    return fallback;
+  }
+  const rows = (res.data || []).map(mapper);
+  return rows.length ? rows : fallback;
+}
 
 const LS_KEYS = {
   listings: 'profinder_software',
@@ -74,7 +108,22 @@ export async function hydrateStore() {
     return;
   }
 
+  loadFromLocalStorage();
   const cache = getCache();
+  const localBackup = {
+    listings: [...cache.listings],
+    messages: [...cache.messages],
+    reviews: [...cache.reviews],
+    bundles: [...cache.bundles],
+    services: [...cache.services],
+    jobs: [...cache.jobs],
+    proposals: [...cache.proposals],
+    purchases: [...cache.purchases],
+    library: { ...cache.library },
+    following: { ...cache.following },
+    feedback: [...cache.feedback],
+    users: [...cache.users],
+  };
 
   const [
     profilesRes,
@@ -106,41 +155,101 @@ export async function hydrateStore() {
     supabase.from('feedback_flags').select('user_id'),
   ]);
 
+  if (profilesRes.error) {
+    console.warn('Profiles hydrate warning:', profilesRes.error.message);
+  }
   if (profilesRes.data?.length) {
     cache.users = profilesRes.data.map((row) => profileToUser(row));
-  } else {
-    const localUsers = JSON.parse(localStorage.getItem('profinder_users') || '[]');
-    if (localUsers.length) cache.users = localUsers;
+  } else if (localBackup.users.length) {
+    cache.users = localBackup.users;
   }
 
-  cache.listings = (listingsRes.data || []).map((r) => r.data);
-  cache.messages = (messagesRes.data || []).map((r) => r.data);
-  cache.reviews = (reviewsRes.data || []).map((r) => r.data);
-  cache.bundles = (bundlesRes.data || []).map((r) => r.data);
-  cache.services = (servicesRes.data || []).map((r) => r.data);
-  cache.jobs = (jobsRes.data || []).map((r) => r.data);
-  cache.proposals = (proposalsRes.data || []).map((r) => r.data);
-  cache.purchases = (purchasesRes.data || []).map((r) => r.data);
+  cache.listings = mapRows(listingsRes, (r) => r.data, localBackup.listings);
+  cache.messages = mapRows(messagesRes, (r) => r.data, localBackup.messages);
+  cache.reviews = mapRows(reviewsRes, (r) => r.data, localBackup.reviews);
+  cache.bundles = mapRows(bundlesRes, (r) => r.data, localBackup.bundles);
+  cache.services = mapRows(servicesRes, (r) => r.data, localBackup.services);
+  cache.jobs = mapRows(jobsRes, (r) => r.data, localBackup.jobs);
+  cache.proposals = mapRows(proposalsRes, (r) => r.data, localBackup.proposals);
+  cache.purchases = mapRows(purchasesRes, (r) => r.data, localBackup.purchases);
 
-  cache.library = {};
-  (savedRes.data || []).forEach(({ user_id, product_id }) => {
-    if (!cache.library[user_id]) cache.library[user_id] = [];
-    cache.library[user_id].push(product_id);
-  });
+  if (savedRes.error) {
+    cache.library = localBackup.library;
+  } else {
+    cache.library = {};
+    (savedRes.data || []).forEach(({ user_id, product_id }) => {
+      if (!cache.library[user_id]) cache.library[user_id] = [];
+      cache.library[user_id].push(product_id);
+    });
+  }
 
-  cache.following = {};
-  (followsRes.data || []).forEach(({ follower_id, creator_id }) => {
-    if (!cache.following[follower_id]) cache.following[follower_id] = [];
-    cache.following[follower_id].push(creator_id);
-  });
+  if (followsRes.error) {
+    cache.following = localBackup.following;
+  } else {
+    cache.following = {};
+    (followsRes.data || []).forEach(({ follower_id, creator_id }) => {
+      if (!cache.following[follower_id]) cache.following[follower_id] = [];
+      cache.following[follower_id].push(creator_id);
+    });
+  }
 
-  cache.feedback = (feedbackRes.data || []).map((r) => r.data);
+  const localFeedbackFlags = { ...cache.feedbackFlags };
+
+  cache.feedback = mapRows(feedbackRes, (r) => r.data, localBackup.feedback);
   cache.feedbackFlags = {};
-  (flagsRes.data || []).forEach(({ user_id }) => {
-    cache.feedbackFlags[user_id] = true;
+  if (!flagsRes.error) {
+    (flagsRes.data || []).forEach(({ user_id }) => {
+      cache.feedbackFlags[user_id] = true;
+    });
+  } else {
+    Object.assign(cache.feedbackFlags, localFeedbackFlags);
+  }
+
+  await pushLocalOnlyContent(localBackup, cache, {
+    listings: listingsRes,
+    jobs: jobsRes,
+    services: servicesRes,
+    proposals: proposalsRes,
   });
 
   finishHydrate();
+}
+
+async function pushLocalOnlyContent(localBackup, cache, remote) {
+  if (!isSupabaseConfigured()) return;
+
+  const syncMissing = async (localItems, cacheItems, remoteRes, syncFn, getId) => {
+    if (!localItems.length) return;
+    if (remoteRes.error) return;
+
+    const remoteItems = (remoteRes.data || []).map((row) => row.data);
+    let missing = localItems;
+
+    if (remoteItems.length > 0) {
+      const remoteIds = new Set(remoteItems.map(getId));
+      missing = localItems.filter((item) => !remoteIds.has(getId(item)));
+    }
+
+    if (!missing.length) return;
+
+    const cacheIds = new Set(cacheItems.map(getId));
+    const toAdd = missing.filter((item) => !cacheIds.has(getId(item)));
+    if (toAdd.length) {
+      if (cacheItems === cache.listings) cache.listings = [...toAdd, ...cache.listings];
+      else if (cacheItems === cache.jobs) cache.jobs = [...toAdd, ...cache.jobs];
+      else if (cacheItems === cache.services) cache.services = [...toAdd, ...cache.services];
+      else if (cacheItems === cache.proposals) cache.proposals = [...toAdd, ...cache.proposals];
+    }
+
+    await syncFn(missing);
+  };
+
+  await Promise.all([
+    syncMissing(localBackup.listings, cache.listings, remote.listings, syncListings, (l) => l.id),
+    syncMissing(localBackup.jobs, cache.jobs, remote.jobs, syncJobs, (j) => j.id),
+    syncMissing(localBackup.services, cache.services, remote.services, syncServices, (s) => s.userId),
+    syncMissing(localBackup.proposals, cache.proposals, remote.proposals, syncProposals, (p) => p.id),
+  ]);
 }
 
 function finishHydrate() {
@@ -184,11 +293,12 @@ export async function syncListings(listings) {
 
 export async function syncListing(listing) {
   if (!isSupabaseConfigured()) return;
-  await supabase.from('software_listings').upsert({
+  const result = await supabase.from('software_listings').upsert({
     id: listing.id,
     seller_id: listing.sellerId || null,
     data: listing,
   }, { onConflict: 'id' });
+  throwIfError(result, 'listing');
 }
 
 export async function deleteListingFromSupabase(id) {
@@ -316,11 +426,12 @@ export async function syncServices(services) {
 
 export async function syncService(service) {
   if (!isSupabaseConfigured()) return;
-  await supabase.from('services').upsert({
+  const result = await supabase.from('services').upsert({
     id: service.id,
     user_id: service.userId || null,
     data: service,
   }, { onConflict: 'id' });
+  throwIfError(result, 'service');
 }
 
 export async function deleteServiceFromSupabase(userId) {
@@ -340,11 +451,12 @@ export async function syncJobs(jobs) {
 
 export async function syncJob(job) {
   if (!isSupabaseConfigured()) return;
-  await supabase.from('jobs').upsert({
+  const result = await supabase.from('jobs').upsert({
     id: job.id,
     poster_id: job.posterId || null,
     data: job,
   }, { onConflict: 'id' });
+  throwIfError(result, 'job');
 }
 
 export async function deleteJobFromSupabase(id) {
@@ -368,12 +480,13 @@ export async function syncProposals(proposals) {
 
 export async function syncProposal(proposal) {
   if (!isSupabaseConfigured()) return;
-  await supabase.from('proposals').upsert({
+  const result = await supabase.from('proposals').upsert({
     id: proposal.id,
     job_id: proposal.jobId,
     freelancer_id: proposal.freelancerId || null,
     data: proposal,
   }, { onConflict: 'id' });
+  throwIfError(result, 'proposal');
 }
 
 export async function syncPurchases(purchases) {
@@ -478,6 +591,8 @@ export function subscribeToRealtime(onChange) {
     .channel('profinder-realtime')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, () => onChange())
     .on('postgres_changes', { event: '*', schema: 'public', table: 'software_listings' }, () => onChange())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'services' }, () => onChange())
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'bundles' }, () => onChange())
     .on('postgres_changes', { event: '*', schema: 'public', table: 'jobs' }, () => onChange())
     .on('postgres_changes', { event: '*', schema: 'public', table: 'proposals' }, () => onChange())
     .on('postgres_changes', { event: '*', schema: 'public', table: 'purchases' }, () => onChange())

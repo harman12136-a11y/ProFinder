@@ -26,6 +26,7 @@ export default function RegisterService() {
   });
   const [errors, setErrors] = useState({});
   const [showPayment, setShowPayment] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   if (existing && (existing.registrationPaid || FREE_PUBLISH_MODE)) {
     return <Navigate to="/manage-service" replace />;
@@ -51,31 +52,39 @@ export default function RegisterService() {
     e.preventDefault();
     if (!validate()) return;
     if (FREE_PUBLISH_MODE) {
-      handlePaymentSuccess();
+      void handlePaymentSuccess();
       return;
     }
     setShowPayment(true);
   };
 
-  const handlePaymentSuccess = () => {
-    registerServiceProfile({
-      userId: user.id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      profession: form.profession,
-      professionOther: isOther ? form.professionOther.trim() : '',
-      degree: form.degree.trim(),
-      achievements: form.achievements.trim(),
-      bio: form.bio.trim(),
-      experience: form.experience.trim(),
-      servicesOffered: form.servicesOffered.trim(),
-    });
-    const refreshed = getUserById(user.id);
-    if (refreshed?.subscriptionExpiresAt) {
-      updateUser({ subscriptionExpiresAt: refreshed.subscriptionExpiresAt });
+  const handlePaymentSuccess = async () => {
+    setSubmitting(true);
+    setErrors({});
+    try {
+      await registerServiceProfile({
+        userId: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        profession: form.profession,
+        professionOther: isOther ? form.professionOther.trim() : '',
+        degree: form.degree.trim(),
+        achievements: form.achievements.trim(),
+        bio: form.bio.trim(),
+        experience: form.experience.trim(),
+        servicesOffered: form.servicesOffered.trim(),
+      });
+      const refreshed = getUserById(user.id);
+      if (refreshed?.subscriptionExpiresAt) {
+        updateUser({ subscriptionExpiresAt: refreshed.subscriptionExpiresAt });
+      }
+      navigate('/dashboard');
+    } catch (err) {
+      setErrors({ submit: err.message || 'Failed to register. Please try again.' });
+    } finally {
+      setSubmitting(false);
     }
-    navigate('/dashboard');
   };
 
   return (
@@ -192,8 +201,14 @@ export default function RegisterService() {
               </div>
             )}
 
-            <button type="submit" className="btn btn-primary register-submit">
-              {FREE_PUBLISH_MODE ? 'Register' : `Pay ${formatINR(SERVICE_REGISTRATION_FEE)} & Register`}
+            {errors.submit && <span className="form-error">{errors.submit}</span>}
+
+            <button type="submit" className="btn btn-primary register-submit" disabled={submitting}>
+              {submitting
+                ? 'Registering…'
+                : FREE_PUBLISH_MODE
+                  ? 'Register'
+                  : `Pay ${formatINR(SERVICE_REGISTRATION_FEE)} & Register`}
             </button>
           </form>
         </motion.div>

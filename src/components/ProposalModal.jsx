@@ -13,6 +13,7 @@ export default function ProposalModal({ isOpen, onClose, job, onSubmitted }) {
   const [timeline, setTimeline] = useState('');
   const [errors, setErrors] = useState({});
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
@@ -25,11 +26,14 @@ export default function ProposalModal({ isOpen, onClose, job, onSubmitted }) {
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
     if (!validate()) return;
+
+    setSubmitting(true);
+    setErrors({});
     try {
-      addProposal({
+      await addProposal({
         jobId: job.id,
         freelancerId: user.id,
         freelancerName: user.name,
@@ -47,7 +51,9 @@ export default function ProposalModal({ isOpen, onClose, job, onSubmitted }) {
         onClose();
       }, 1400);
     } catch (err) {
-      setErrors({ form: err.message });
+      setErrors({ form: err.message || 'Failed to submit proposal. Please try again.' });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -119,7 +125,9 @@ export default function ProposalModal({ isOpen, onClose, job, onSubmitted }) {
 
                 {errors.form && <span className="form-error">{errors.form}</span>}
 
-                <button type="submit" className="btn btn-primary proposal-submit">Submit Proposal</button>
+                <button type="submit" className="btn btn-primary proposal-submit" disabled={submitting}>
+                  {submitting ? 'Submitting…' : 'Submit Proposal'}
+                </button>
               </form>
             </>
           )}
