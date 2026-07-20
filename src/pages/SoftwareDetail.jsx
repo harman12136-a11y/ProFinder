@@ -35,7 +35,7 @@ export default function SoftwareDetail() {
   const [owned, setOwned] = useState(() => (user ? hasPurchased(user.id, id) : false));
   const seller = software ? getSellerForListing(software) : null;
   const rating = software ? getProductRating(software.id) : { avg: 0, count: 0 };
-  const isOwnListing = user?.id === software?.sellerId;
+  const isOwnListing = Boolean(user?.id && software?.sellerId && user.id === software.sellerId);
 
   useEffect(() => {
     setSoftware(getSoftwareById(id) || null);
@@ -67,7 +67,10 @@ export default function SoftwareDetail() {
       navigate('/login');
       return;
     }
-    if (user.id === software.sellerId) return;
+    if (isOwnListing) {
+      navigate('/messages');
+      return;
+    }
     const params = new URLSearchParams({ to: software.sellerId, product: software.id });
     navigate(`/messages?${params.toString()}`);
   };
@@ -195,11 +198,9 @@ export default function SoftwareDetail() {
               )}
 
               <div className="detail-contact-row">
-                {!isOwnListing && (
-                  <button type="button" className="btn btn-outline" onClick={handleMessage}>
-                    <MessageCircle size={16} /> Message
-                  </button>
-                )}
+                <button type="button" className="btn btn-outline" onClick={handleMessage}>
+                  <MessageCircle size={16} /> Message
+                </button>
                 {software.contactPhone && (
                   <a href={`tel:${software.contactPhone.replace(/\s/g, '')}`} className="btn btn-outline" onClick={() => trackListingContact(software.id)}>
                     <Phone size={16} /> Call

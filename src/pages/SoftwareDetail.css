@@ -186,6 +186,10 @@
   margin-bottom: 16px;
 }
 
+.detail-contact-row:has(> :only-child) {
+  grid-template-columns: 1fr;
+}
+
 .detail-contact-row .btn {
   padding: 12px;
   font-size: 0.85rem;
