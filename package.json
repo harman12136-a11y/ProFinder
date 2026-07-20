@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "check:db": "node scripts/check-supabase.mjs"
+    "check:db": "node scripts/check-supabase.mjs",
+    "check:auth": "node scripts/check-auth.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.7",

@@ -48,6 +48,27 @@ function isLocalUsernameTaken(username) {
   return getUsers().some((u) => u.username === normalized);
 }
 
+function userFromSession(session) {
+  const meta = session.user.user_metadata || {};
+  return {
+    id: session.user.id,
+    username: meta.username || '',
+    name: meta.name || '',
+    email: session.user.email || '',
+    phone: '',
+    dob: '',
+    survey: null,
+    avatar: '',
+    bio: '',
+    skills: [],
+    portfolio: [],
+    provider: 'email',
+    verified: { email: false, phone: false, github: false },
+    createdAt: session.user.created_at || null,
+    lastLoginAt: new Date().toISOString(),
+  };
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -74,10 +95,20 @@ export function AuthProvider({ children }) {
     const restoreSession = async (session) => {
       if (!session?.user || !mounted) return;
       try {
-        const profile = await fetchProfile(session.user.id);
+        let profile = await fetchProfile(session.user.id);
+        if (!profile) {
+          const fallback = userFromSession(session);
+          try {
+            await upsertProfile(userToProfileRow(fallback));
+            profile = await fetchProfile(session.user.id);
+          } catch {
+            applyUser(fallback);
+            return;
+          }
+        }
         if (profile) applyUser(profileToUser(profile));
       } catch {
-        /* profile may not exist yet */
+        applyUser(userFromSession(session));
       }
     };
 
@@ -114,9 +145,11 @@ export function AuthProvider({ children }) {
       password,
     });
     if (error) {
-      throw new Error(error.message === 'Invalid login credentials'
-        ? 'Invalid username or password'
-        : error.message);
+      const msg = error.message || '';
+      if (msg.includes('Invalid login credentials')) {
+        throw new Error('Invalid username or password. If you signed up before today, create a new account.');
+      }
+      throw new Error(msg);
     }
 
     let profile = await fetchProfile(data.user.id);
@@ -191,7 +224,12 @@ export function AuthProvider({ children }) {
         data: { name: name.trim(), username: normalizedUsername },
       },
     });
-    if (error) throw new Error(error.message);
+    if (error) {
+      if (error.message?.toLowerCase().includes('invalid') && error.message?.toLowerCase().includes('email')) {
+        throw new Error('Could not create account. Please try again or contact support.');
+      }
+      throw new Error(error.message);
+    }
 
     const profileRow = userToProfileRow({
       id: data.user.id,
@@ -209,11 +247,14 @@ export function AuthProvider({ children }) {
       verified: { email: false, phone: false, github: false },
       createdAt: new Date().toISOString(),
     });
-    await upsertProfile(profileRow);
 
     if (!data.session) {
-      throw new Error('Account created! You can now log in with your username.');
+      throw new Error(
+        'Account created! In Supabase, turn off email confirmation (Auth → Providers → Email), then log in with your username.',
+      );
     }
+
+    await upsertProfile(profileRow);
 
     await updateLastLogin(data.user.id);
     const safeUser = profileToUser({ ...profileRow, last_login_at: new Date().toISOString() });

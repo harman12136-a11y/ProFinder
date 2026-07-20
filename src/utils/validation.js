@@ -29,9 +29,9 @@ export function normalizeUsername(username) {
   return username.trim().toLowerCase();
 }
 
-/** Internal auth email for Supabase — not shown to users */
+/** Internal auth email for Supabase — not shown to users; must use a real TLD Supabase accepts */
 export function usernameToAuthEmail(username) {
-  return `${normalizeUsername(username)}@profinder.auth`;
+  return `${normalizeUsername(username)}@profind.app`;
 }
 
 export function normalizeUrl(url) {

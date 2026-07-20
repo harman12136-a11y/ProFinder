@@ -1,11 +1,12 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useAuth } from '../hooks/useAuth';
 import { updateUserProfile } from '../utils/storage';
-import { Camera, X, Plus, Sparkles, Briefcase, Link2, Trash2 } from 'lucide-react';
+import { checkSupabaseHealth } from '../utils/supabaseHealth';
+import { Camera, X, Plus, Sparkles, Briefcase, Link2, Trash2, AlertTriangle } from 'lucide-react';
 import './Settings.css';
 
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
@@ -29,8 +30,13 @@ export default function Settings() {
   const [work, setWork] = useState(emptyWork);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+  const [dbHealth, setDbHealth] = useState(null);
   const avatarInputRef = useRef(null);
   const workInputRef = useRef(null);
+
+  useEffect(() => {
+    checkSupabaseHealth().then(setDbHealth);
+  }, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -151,6 +157,21 @@ export default function Settings() {
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="section-title">Profile <span className="gradient-text">Settings</span></h1>
           <p className="section-subtitle">Customize your storefront and profile.</p>
+
+          {dbHealth && !dbHealth.tablesReady && (
+            <div className="settings-setup-alert card">
+              <AlertTriangle size={20} />
+              <div>
+                <strong>Cloud sync is not set up yet</strong>
+                <p>{dbHealth.message}</p>
+                <ol>
+                  <li>Open Supabase → SQL Editor → paste all of <code>supabase/schema.sql</code> → Run</li>
+                  <li>Auth → Providers → Email → turn off <strong>Confirm email</strong></li>
+                  <li>Create a <strong>new account</strong> (old local accounts won&apos;t sync)</li>
+                </ol>
+              </div>
+            </div>
+          )}
 
           <form className="settings-form card" onSubmit={handleSubmit}>
             <div className="avatar-field">
