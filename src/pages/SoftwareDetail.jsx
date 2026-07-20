@@ -7,7 +7,6 @@ import FollowButton from '../components/FollowButton';
 import SaveButton from '../components/SaveButton';
 import ProductCard from '../components/ProductCard';
 import ReviewsSection from '../components/ReviewsSection';
-import MessageModal from '../components/MessageModal';
 import PaymentModal from '../components/PaymentModal';
 import VerifiedBadge from '../components/VerifiedBadge';
 import StarRating from '../components/StarRating';
@@ -23,7 +22,7 @@ import {
 } from '../utils/storage';
 import { formatINR, formatIndianPhone } from '../utils/validation';
 import { useAuth } from '../hooks/useAuth';
-import { Mail, Phone, ExternalLink, MessageCircle, ShoppingBag, Check } from 'lucide-react';
+import { Phone, ExternalLink, MessageCircle, ShoppingBag, Check } from 'lucide-react';
 import './SoftwareDetail.css';
 import '../components/VerifiedBadge.css';
 
@@ -32,7 +31,6 @@ export default function SoftwareDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [software, setSoftware] = useState(() => getSoftwareById(id));
-  const [showMessage, setShowMessage] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [owned, setOwned] = useState(() => (user ? hasPurchased(user.id, id) : false));
   const seller = software ? getSellerForListing(software) : null;
@@ -62,6 +60,17 @@ export default function SoftwareDetail() {
 
   const bundles = getBundlesBySeller(software.sellerId).filter((b) => b.productIds.includes(software.id));
   const isFeatured = software.featured && software.featuredUntil && new Date(software.featuredUntil) > new Date();
+
+  const handleMessage = () => {
+    trackListingContact(software.id);
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    if (user.id === software.sellerId) return;
+    const params = new URLSearchParams({ to: software.sellerId, product: software.id });
+    navigate(`/messages?${params.toString()}`);
+  };
 
   const handleBuy = () => {
     if (!user) {
@@ -179,21 +188,17 @@ export default function SoftwareDetail() {
                 </button>
               )}
 
-              {user && user.id !== software.sellerId ? (
-                <button type="button" className="btn btn-primary detail-want-btn" onClick={() => setShowMessage(true)}>
-                  <MessageCircle size={18} /> Message Seller
+              {!isOwnListing && (
+                <button type="button" className="btn btn-primary detail-want-btn" onClick={handleMessage}>
+                  <MessageCircle size={18} /> I want this
                 </button>
-              ) : (
-                <a href={`mailto:${software.contactEmail}?subject=I want ${software.title}`} className="btn btn-primary detail-want-btn" onClick={() => trackListingContact(software.id)}>
-                  I want this
-                </a>
               )}
 
               <div className="detail-contact-row">
-                {software.contactEmail && (
-                  <a href={`mailto:${software.contactEmail}`} className="btn btn-outline" onClick={() => trackListingContact(software.id)}>
-                    <Mail size={16} /> Email
-                  </a>
+                {!isOwnListing && (
+                  <button type="button" className="btn btn-outline" onClick={handleMessage}>
+                    <MessageCircle size={16} /> Message
+                  </button>
                 )}
                 {software.contactPhone && (
                   <a href={`tel:${software.contactPhone.replace(/\s/g, '')}`} className="btn btn-outline" onClick={() => trackListingContact(software.id)}>
@@ -207,7 +212,6 @@ export default function SoftwareDetail() {
               </div>
 
               <div className="detail-contact-info">
-                {software.contactEmail && <p><strong>Email:</strong> {software.contactEmail}</p>}
                 {software.contactPhone && <p><strong>Phone:</strong> {formatIndianPhone(software.contactPhone)}</p>}
               </div>
             </div>
@@ -237,13 +241,6 @@ export default function SoftwareDetail() {
           </section>
         )}
       </div>
-
-      <MessageModal
-        isOpen={showMessage}
-        onClose={() => setShowMessage(false)}
-        seller={seller}
-        product={software}
-      />
 
       <PaymentModal
         isOpen={showPayment}

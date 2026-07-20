@@ -4,7 +4,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useAuth } from '../hooks/useAuth';
 import { useMessageSync } from '../hooks/useMessageSync';
-import { getMessages, getConversation, markMessagesRead, getUserById, sendMessage } from '../utils/storage';
+import { getMessages, getConversation, markMessagesRead, getUserById, sendMessage, getSoftwareById } from '../utils/storage';
 import { Mail, Send } from 'lucide-react';
 import './Messages.css';
 
@@ -39,12 +39,26 @@ export default function Messages() {
     if (!activeKey) return null;
     const found = threads.find((t) => `${t.otherId}-${t.productId || 'general'}` === activeKey);
     if (found) return found;
+
+    const to = searchParams.get('to');
+    const product = searchParams.get('product');
+    if (to) {
+      const expectedKey = product ? `${to}-${product}` : `${to}-general`;
+      if (activeKey === expectedKey) {
+        const productTitle = product
+          ? getSoftwareById(product)?.title
+          : null;
+        return { otherId: to, productId: product || null, productTitle };
+      }
+    }
+
     if (activeKey.endsWith('-general')) {
       const otherId = activeKey.slice(0, -'-general'.length);
       return { otherId, productId: null, productTitle: null };
     }
+
     return null;
-  }, [activeKey, threads]);
+  }, [activeKey, threads, searchParams]);
 
   const conversation = useMemo(() => {
     if (!active) return [];
@@ -68,15 +82,24 @@ export default function Messages() {
 
   useEffect(() => {
     const to = searchParams.get('to');
-    if (!to || to === user.id || handledToRef.current === to) return;
-    handledToRef.current = to;
-    const thread = threads.find((t) => t.otherId === to);
+    const product = searchParams.get('product');
+    if (!to || to === user.id) return;
+
+    const key = product ? `${to}-${product}` : `${to}-general`;
+    if (handledToRef.current === key) return;
+    handledToRef.current = key;
+
+    const thread = threads.find((t) => {
+      if (t.otherId !== to) return false;
+      return product ? t.productId === product : !t.productId;
+    });
+
     if (thread) {
       setActiveKey(`${thread.otherId}-${thread.productId || 'general'}`);
       setDraft('');
       markMessagesRead(user.id, thread.otherId);
     } else {
-      setActiveKey(`${to}-general`);
+      setActiveKey(key);
       setDraft('');
     }
   }, [searchParams, threads, user.id]);
