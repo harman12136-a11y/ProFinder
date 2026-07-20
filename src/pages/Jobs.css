@@ -56,6 +56,9 @@
   width: 100%;
   padding: 10px 32px 10px 12px;
   background-color: var(--select-bg);
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text-primary);

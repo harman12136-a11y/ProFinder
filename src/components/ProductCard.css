@@ -184,6 +184,9 @@
 .discover-sort select {
   padding: 12px 40px 12px 16px;
   background-color: var(--select-bg);
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 16px;
   border: 1px solid var(--border);
   border-radius: 999px;
   color: var(--text-primary);

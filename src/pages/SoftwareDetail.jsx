@@ -7,7 +7,6 @@ import FollowButton from '../components/FollowButton';
 import SaveButton from '../components/SaveButton';
 import ProductCard from '../components/ProductCard';
 import ReviewsSection from '../components/ReviewsSection';
-import PaymentModal from '../components/PaymentModal';
 import VerifiedBadge from '../components/VerifiedBadge';
 import StarRating from '../components/StarRating';
 import {
@@ -17,13 +16,11 @@ import {
   trackListingContact,
   getProductRating,
   getBundlesBySeller,
-  hasPurchased,
-  recordPurchase,
 } from '../utils/storage';
 import { formatINR, formatIndianPhone } from '../utils/validation';
 import { navigateContact, isOwner } from '../utils/contactActions';
 import { useAuth } from '../hooks/useAuth';
-import { Phone, ExternalLink, MessageCircle, ShoppingBag, Check, Settings } from 'lucide-react';
+import { Phone, ExternalLink, MessageCircle, Settings } from 'lucide-react';
 import './SoftwareDetail.css';
 import '../components/VerifiedBadge.css';
 
@@ -32,16 +29,13 @@ export default function SoftwareDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [software, setSoftware] = useState(() => getSoftwareById(id));
-  const [showPayment, setShowPayment] = useState(false);
-  const [owned, setOwned] = useState(() => (user ? hasPurchased(user.id, id) : false));
   const seller = software ? getSellerForListing(software) : null;
   const rating = software ? getProductRating(software.id) : { avg: 0, count: 0 };
   const isOwnListing = isOwner(user, software?.sellerId);
 
   useEffect(() => {
     setSoftware(getSoftwareById(id) || null);
-    setOwned(user ? hasPurchased(user.id, id) : false);
-  }, [id, user]);
+  }, [id]);
 
   if (!software) {
     return (
@@ -73,28 +67,6 @@ export default function SoftwareDetail() {
       contextId: software.id,
       contextTitle: software.title,
     });
-  };
-
-  const handleBuy = () => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-    setShowPayment(true);
-  };
-
-  const handlePurchaseSuccess = () => {
-    recordPurchase({
-      userId: user.id,
-      productId: software.id,
-      price: software.price,
-      productTitle: software.title,
-      sellerId: software.sellerId,
-      sellerName: software.sellerName,
-      license: software.license,
-    });
-    setOwned(true);
-    setShowPayment(false);
   };
 
   return (
@@ -179,18 +151,6 @@ export default function SoftwareDetail() {
 
               {software.category && <span className="detail-category">{software.category}</span>}
 
-              {owned ? (
-                <div className="detail-owned">
-                  <Check size={18} />
-                  <span>In your purchase library</span>
-                  <Link to="/library" className="btn btn-outline btn-sm">View library</Link>
-                </div>
-              ) : !isOwnListing && (
-                <button type="button" className="btn btn-primary detail-buy-btn" onClick={handleBuy}>
-                  <ShoppingBag size={18} /> Buy Now
-                </button>
-              )}
-
               {!isOwnListing && (
                 <button type="button" className="btn btn-primary detail-want-btn" onClick={handleMessage}>
                   <MessageCircle size={18} /> I want this
@@ -243,16 +203,6 @@ export default function SoftwareDetail() {
           </section>
         )}
       </div>
-
-      <PaymentModal
-        isOpen={showPayment}
-        onClose={() => setShowPayment(false)}
-        onSuccess={handlePurchaseSuccess}
-        amount={software.price}
-        title="Complete Purchase"
-        description={`Buy "${software.title}" and add it to your library`}
-        successText="Purchase successful!"
-      />
 
       <Footer />
     </div>
