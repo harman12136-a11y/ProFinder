@@ -165,7 +165,7 @@ export default function Settings() {
                 <strong>Cloud sync is not set up yet</strong>
                 <p>{dbHealth.message}</p>
                 <ol>
-                  <li>Open Supabase → SQL Editor → paste all of <code>supabase/fix_database.sql</code> → Run</li>
+                  <li>Open Supabase → SQL Editor → paste all of <code>supabase/deleted_users.sql</code> → Run</li>
                   <li>Auth → Providers → Email → turn off <strong>Confirm email</strong></li>
                   <li>Create a <strong>new account</strong> (old local accounts won&apos;t sync)</li>
                 </ol>

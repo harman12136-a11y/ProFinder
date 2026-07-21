@@ -1,9 +1,17 @@
 import { supabase } from '../lib/supabase';
 import { normalizeUsername } from './validation';
 
+function isMissingTableError(error) {
+  const msg = error?.message || '';
+  return msg.includes('Could not find the table') || msg.includes('does not exist');
+}
+
 function formatDbError(error) {
   const msg = error?.message || 'Database error';
-  if (msg.includes('does not exist')) {
+  if (msg.includes('Could not find the table') && msg.includes('deleted_users')) {
+    return 'Missing deleted_users table. Open Supabase → SQL Editor → run supabase/deleted_users.sql';
+  }
+  if (isMissingTableError(error)) {
     return 'Database setup incomplete. In Supabase SQL Editor, run supabase/fix_database.sql, then try again.';
   }
   return msg;
@@ -81,7 +89,8 @@ export async function isUsernameTaken(username) {
     .eq('username', normalized)
     .maybeSingle();
 
-  if (deletedError && !deletedError.message?.includes('does not exist')) {
+  if (deletedError) {
+    if (isMissingTableError(deletedError)) return Boolean(data);
     throw new Error(formatDbError(deletedError));
   }
   return Boolean(deleted);
@@ -96,7 +105,7 @@ export async function isUserDeleted(userId) {
     .maybeSingle();
 
   if (error) {
-    if (error.message?.includes('does not exist')) return false;
+    if (isMissingTableError(error)) return false;
     throw new Error(formatDbError(error));
   }
   return Boolean(data);
@@ -108,7 +117,12 @@ export async function markUserDeleted(userId, username) {
     username: username ? normalizeUsername(username) : null,
     deleted_at: new Date().toISOString(),
   }, { onConflict: 'id' });
-  if (error) throw new Error(formatDbError(error));
+  if (error) {
+    if (isMissingTableError(error)) {
+      throw new Error(formatDbError(error));
+    }
+    throw new Error(formatDbError(error));
+  }
 }
 
 export async function upsertProfile(row) {
