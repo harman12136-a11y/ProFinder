@@ -585,6 +585,11 @@ export function updateUserProfile(userId, updates) {
 }
 
 export async function deleteUserAccount(userId) {
+  await purgeLocalUserData(userId);
+  await deleteUserContentFromSupabase(userId);
+}
+
+export async function purgeLocalUserData(userId) {
   const listingIds = getUserListings(userId).map((l) => l.id);
   const jobIds = getJobsByPoster(userId).map((j) => j.id);
 
@@ -626,11 +631,33 @@ export async function deleteUserAccount(userId) {
 
   if (getCurrentUser()?.id === userId) setCurrentUser(null);
   localStorage.removeItem(`profinder_feedback_${userId}`);
-
-  await deleteUserContentFromSupabase(userId);
+  markLocalUserDeleted(userId);
 
   emitMessages();
-  window.dispatchEvent(new Event('profinder-refresh'));
+}
+
+const DELETED_USERS_KEY = 'profinder_deleted_users';
+
+export function markLocalUserDeleted(userId) {
+  if (!userId) return;
+  try {
+    const ids = JSON.parse(localStorage.getItem(DELETED_USERS_KEY) || '[]');
+    if (!ids.includes(userId)) {
+      ids.push(userId);
+      localStorage.setItem(DELETED_USERS_KEY, JSON.stringify(ids));
+    }
+  } catch {
+    localStorage.setItem(DELETED_USERS_KEY, JSON.stringify([userId]));
+  }
+}
+
+export function isLocalUserDeleted(userId) {
+  if (!userId) return false;
+  try {
+    return JSON.parse(localStorage.getItem(DELETED_USERS_KEY) || '[]').includes(userId);
+  } catch {
+    return false;
+  }
 }
 
 export function getServices() {

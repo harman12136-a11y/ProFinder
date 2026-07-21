@@ -203,6 +203,9 @@ create policy "Users manage feedback flags" on public.feedback_flags for all usi
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
+  if exists (select 1 from public.deleted_users where id = new.id) then
+    return new;
+  end if;
   insert into public.profiles (id, email, name, username)
   values (
     new.id,
@@ -218,3 +221,50 @@ $$;
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users for each row execute function public.handle_new_user();
+
+-- ── Deleted accounts blocklist (prevents re-login after delete) ───────────────
+create table if not exists public.deleted_users (
+  id uuid primary key,
+  username text,
+  deleted_at timestamptz not null default now()
+);
+
+alter table public.deleted_users enable row level security;
+
+drop policy if exists "Deleted users readable" on public.deleted_users;
+create policy "Deleted users readable" on public.deleted_users for select using (true);
+drop policy if exists "Users mark self deleted" on public.deleted_users;
+create policy "Users mark self deleted" on public.deleted_users for insert with check (auth.uid() = id);
+drop policy if exists "Users update own deletion" on public.deleted_users;
+create policy "Users update own deletion" on public.deleted_users for update using (auth.uid() = id);
+
+-- ── Delete account: removes user from Supabase Auth (login disabled after delete) ─
+create or replace function public.delete_own_account()
+returns void
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  uid uuid := auth.uid();
+  uname text;
+begin
+  if uid is null then
+    raise exception 'Not authenticated';
+  end if;
+
+  select username into uname from public.profiles where id = uid;
+  if uname is null then
+    select coalesce(raw_user_meta_data->>'username', '') into uname from auth.users where id = uid;
+  end if;
+
+  insert into public.deleted_users (id, username, deleted_at)
+  values (uid, nullif(uname, ''), now())
+  on conflict (id) do update set deleted_at = now();
+
+  delete from auth.users where id = uid;
+end;
+$$;
+
+revoke all on function public.delete_own_account() from public;
+grant execute on function public.delete_own_account() to authenticated;

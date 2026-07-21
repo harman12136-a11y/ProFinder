@@ -73,7 +73,42 @@ export async function isUsernameTaken(username) {
     .maybeSingle();
 
   if (error) throw new Error(formatDbError(error));
+  if (data) return true;
+
+  const { data: deleted, error: deletedError } = await supabase
+    .from('deleted_users')
+    .select('id')
+    .eq('username', normalized)
+    .maybeSingle();
+
+  if (deletedError && !deletedError.message?.includes('does not exist')) {
+    throw new Error(formatDbError(deletedError));
+  }
+  return Boolean(deleted);
+}
+
+export async function isUserDeleted(userId) {
+  if (!userId) return false;
+  const { data, error } = await supabase
+    .from('deleted_users')
+    .select('id')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (error) {
+    if (error.message?.includes('does not exist')) return false;
+    throw new Error(formatDbError(error));
+  }
   return Boolean(data);
+}
+
+export async function markUserDeleted(userId, username) {
+  const { error } = await supabase.from('deleted_users').upsert({
+    id: userId,
+    username: username ? normalizeUsername(username) : null,
+    deleted_at: new Date().toISOString(),
+  }, { onConflict: 'id' });
+  if (error) throw new Error(formatDbError(error));
 }
 
 export async function upsertProfile(row) {
@@ -115,5 +150,11 @@ export async function updateLastLogin(userId) {
 
 export async function deleteProfile(userId) {
   const { error } = await supabase.from('profiles').delete().eq('id', userId);
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(formatDbError(error));
+}
+
+/** Permanently removes the logged-in user from Supabase Auth (requires delete_own_account RPC). */
+export async function deleteAuthUser() {
+  const { error } = await supabase.rpc('delete_own_account');
+  if (error) throw new Error(formatDbError(error));
 }

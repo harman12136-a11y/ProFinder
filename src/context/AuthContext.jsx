@@ -1,6 +1,14 @@
 import { createContext, useState, useEffect, useCallback } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
-import { getUsers, saveUsers, getCurrentUser, setCurrentUser } from '../utils/storage';
+import {
+  getUsers,
+  saveUsers,
+  getCurrentUser,
+  setCurrentUser,
+  purgeLocalUserData,
+  isLocalUserDeleted,
+  markLocalUserDeleted,
+} from '../utils/storage';
 import {
   validateUsername,
   validateIndianPhone,
@@ -13,15 +21,20 @@ import {
   updateProfile,
   updateLastLogin,
   isUsernameTaken,
+  isUserDeleted,
+  markUserDeleted,
   profileToUser,
   userToProfileRow,
   deleteProfile,
+  deleteAuthUser,
 } from '../utils/supabaseProfiles';
-import { deleteUserAccount } from '../utils/storage';
+import { deleteUserContentFromSupabase } from '../utils/supabaseSync';
 
 const AuthContext = createContext(null);
 
 export { AuthContext };
+
+const DELETED_MSG = 'This account was deleted. Please sign up again.';
 
 function syncUserToLocalCache(safeUser) {
   const users = getUsers();
@@ -39,6 +52,7 @@ function localLogin(username, password) {
     (u) => (u.username === normalized || u.email === normalized) && u.password === password
   );
   if (!found) throw new Error('Invalid username or password');
+  if (isLocalUserDeleted(found.id)) throw new Error(DELETED_MSG);
   const { password: _, ...safeUser } = found;
   return safeUser;
 }
@@ -48,25 +62,11 @@ function isLocalUsernameTaken(username) {
   return getUsers().some((u) => u.username === normalized);
 }
 
-function userFromSession(session) {
-  const meta = session.user.user_metadata || {};
-  return {
-    id: session.user.id,
-    username: meta.username || '',
-    name: meta.name || '',
-    email: session.user.email || '',
-    phone: '',
-    dob: '',
-    survey: null,
-    avatar: '',
-    bio: '',
-    skills: [],
-    portfolio: [],
-    provider: 'email',
-    verified: { email: false, phone: false, github: false },
-    createdAt: session.user.created_at || null,
-    lastLoginAt: new Date().toISOString(),
-  };
+async function rejectDeletedSupabaseUser(userId) {
+  if (await isUserDeleted(userId)) {
+    await supabase.auth.signOut();
+    throw new Error(DELETED_MSG);
+  }
 }
 
 export function AuthProvider({ children }) {
@@ -74,6 +74,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   const applyUser = useCallback((safeUser) => {
+    if (isLocalUserDeleted(safeUser.id)) return;
     setUser(safeUser);
     setCurrentUser(safeUser);
     syncUserToLocalCache(safeUser);
@@ -85,7 +86,8 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (!isSupabaseConfigured()) {
       const saved = getCurrentUser();
-      if (saved) setUser(saved);
+      if (saved && !isLocalUserDeleted(saved.id)) setUser(saved);
+      else if (saved) setCurrentUser(null);
       setLoading(false);
       return undefined;
     }
@@ -95,20 +97,31 @@ export function AuthProvider({ children }) {
     const restoreSession = async (session) => {
       if (!session?.user || !mounted) return;
       try {
-        let profile = await fetchProfile(session.user.id);
-        if (!profile) {
-          const fallback = userFromSession(session);
-          try {
-            await upsertProfile(userToProfileRow(fallback));
-            profile = await fetchProfile(session.user.id);
-          } catch {
-            applyUser(fallback);
-            return;
+        if (await isUserDeleted(session.user.id)) {
+          await supabase.auth.signOut();
+          if (mounted) {
+            setUser(null);
+            setCurrentUser(null);
           }
+          return;
         }
-        if (profile) applyUser(profileToUser(profile));
+
+        const profile = await fetchProfile(session.user.id);
+        if (!profile) {
+          await supabase.auth.signOut();
+          if (mounted) {
+            setUser(null);
+            setCurrentUser(null);
+          }
+          return;
+        }
+        applyUser(profileToUser(profile));
       } catch {
-        applyUser(userFromSession(session));
+        await supabase.auth.signOut();
+        if (mounted) {
+          setUser(null);
+          setCurrentUser(null);
+        }
       }
     };
 
@@ -147,20 +160,17 @@ export function AuthProvider({ children }) {
     if (error) {
       const msg = error.message || '';
       if (msg.includes('Invalid login credentials')) {
-        throw new Error('Invalid username or password. If you signed up before today, create a new account.');
+        throw new Error('Invalid username or password');
       }
       throw new Error(msg);
     }
 
-    let profile = await fetchProfile(data.user.id);
+    await rejectDeletedSupabaseUser(data.user.id);
+
+    const profile = await fetchProfile(data.user.id);
     if (!profile) {
-      await upsertProfile(userToProfileRow({
-        id: data.user.id,
-        username: normalizeUsername(username),
-        name: data.user.user_metadata?.name || '',
-        email: authEmail,
-      }));
-      profile = await fetchProfile(data.user.id);
+      await supabase.auth.signOut();
+      throw new Error(DELETED_MSG);
     }
 
     await updateLastLogin(data.user.id);
@@ -228,6 +238,9 @@ export function AuthProvider({ children }) {
       if (error.message?.toLowerCase().includes('invalid') && error.message?.toLowerCase().includes('email')) {
         throw new Error('Could not create account. Please try again or contact support.');
       }
+      if (error.message?.toLowerCase().includes('already registered')) {
+        throw new Error('This username was used before. Contact support or use a different username.');
+      }
       throw new Error(error.message);
     }
 
@@ -292,19 +305,35 @@ export function AuthProvider({ children }) {
     if (!user) return;
 
     const userId = user.id;
-    await deleteUserAccount(userId);
+    const username = user.username;
 
     if (isSupabaseConfigured()) {
+      // 1. Block future logins immediately (even if auth delete fails later)
+      await markUserDeleted(userId, username);
+      // 2. Remove cloud content + profile while session is active
+      await deleteUserContentFromSupabase(userId);
+      await deleteProfile(userId);
+      // 3. Remove auth login record
       try {
-        await deleteProfile(userId);
-      } catch {
-        /* profile may already be removed */
+        await deleteAuthUser();
+      } catch (err) {
+        throw new Error(
+          err.message?.includes('does not exist') || err.message?.includes('Could not find the function')
+            ? 'Run supabase/fix_database.sql in Supabase SQL Editor to enable full account deletion, then try again.'
+            : err.message || 'Failed to remove login. Please try again.',
+        );
       }
-      await supabase.auth.signOut();
+      await supabase.auth.signOut({ scope: 'global' });
+    } else {
+      markLocalUserDeleted(userId);
     }
+
+    // 4. Clear local data last (no refresh until auth/profile are gone)
+    await purgeLocalUserData(userId);
 
     setUser(null);
     setCurrentUser(null);
+    window.dispatchEvent(new Event('profinder-refresh'));
   };
 
   return (
