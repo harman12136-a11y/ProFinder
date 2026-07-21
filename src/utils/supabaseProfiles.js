@@ -1,6 +1,14 @@
 import { supabase } from '../lib/supabase';
 import { normalizeUsername } from './validation';
 
+function formatDbError(error) {
+  const msg = error?.message || 'Database error';
+  if (msg.includes('does not exist')) {
+    return 'Database setup incomplete. In Supabase SQL Editor, run supabase/fix_database.sql, then try again.';
+  }
+  return msg;
+}
+
 export function profileToUser(row) {
   if (!row) return null;
   return {
@@ -52,7 +60,7 @@ export async function fetchProfile(userId) {
     .eq('id', userId)
     .maybeSingle();
 
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(formatDbError(error));
   return data;
 }
 
@@ -64,13 +72,13 @@ export async function isUsernameTaken(username) {
     .eq('username', normalized)
     .maybeSingle();
 
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(formatDbError(error));
   return Boolean(data);
 }
 
 export async function upsertProfile(row) {
   const { error } = await supabase.from('profiles').upsert(row, { onConflict: 'id' });
-  if (error) throw new Error(error.message);
+  if (error) throw new Error(formatDbError(error));
 }
 
 export async function updateProfile(userId, updates) {
