@@ -23,7 +23,7 @@ import {
   SURVEY_INTERESTS,
   SURVEY_HEARD_FROM,
 } from '../utils/constants';
-import { validateIndianPhone } from '../utils/validation';
+import { validateIndianPhone, isAtLeastAge, maxDobForMinAge, MINIMUM_AGE } from '../utils/validation';
 import './Auth.css';
 
 const STEPS = ['Purpose', 'Interests', 'About you', 'Profile', 'Account'];
@@ -134,6 +134,9 @@ export default function Signup() {
     if (step === 2) {
       if (!fullName.trim()) return 'Please enter your full name.';
       if (!dob) return 'Please enter your date of birth.';
+      if (!isAtLeastAge(dob, MINIMUM_AGE)) {
+        return `You must be at least ${MINIMUM_AGE} years old to use Profind.`;
+      }
       if (!heardFrom) return 'Let us know where you heard about us.';
     }
     if (step === 3) {
@@ -305,13 +308,14 @@ export default function Signup() {
                   </div>
                   <div className="form-group">
                     <label htmlFor="dob">Date of Birth</label>
+                    <p className="survey-hint">You must be {MINIMUM_AGE} or older to create an account.</p>
                     <div className="input-with-icon">
                       <Calendar size={18} />
                       <input
                         id="dob"
                         type="date"
                         value={dob}
-                        max={new Date().toISOString().split('T')[0]}
+                        max={maxDobForMinAge(MINIMUM_AGE)}
                         onChange={(e) => setDob(e.target.value)}
                       />
                     </div>

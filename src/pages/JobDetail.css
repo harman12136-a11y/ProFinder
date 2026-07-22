@@ -63,6 +63,8 @@
   font-size: 1.7rem;
   line-height: 1.25;
   margin-bottom: 10px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .job-detail-poster {
@@ -121,6 +123,8 @@
   color: var(--text-secondary);
   line-height: 1.7;
   white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .job-detail-skills {

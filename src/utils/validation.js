@@ -25,6 +25,35 @@ export function validateUsername(username) {
   return /^[a-zA-Z0-9_]{3,20}$/.test(username.trim());
 }
 
+export const MINIMUM_AGE = 16;
+
+/** Age in full years from a YYYY-MM-DD (or Date) value. Returns null if invalid. */
+export function getAgeFromDob(dob) {
+  if (!dob) return null;
+  const birth = new Date(dob);
+  if (Number.isNaN(birth.getTime())) return null;
+
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age -= 1;
+  }
+  return age;
+}
+
+export function isAtLeastAge(dob, minAge = MINIMUM_AGE) {
+  const age = getAgeFromDob(dob);
+  return age !== null && age >= minAge;
+}
+
+/** Latest allowed DOB (YYYY-MM-DD) for someone who is at least minAge today. */
+export function maxDobForMinAge(minAge = MINIMUM_AGE) {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - minAge);
+  return d.toISOString().split('T')[0];
+}
+
 export function normalizeUsername(username) {
   return username.trim().toLowerCase();
 }

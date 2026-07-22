@@ -14,6 +14,8 @@ import {
   validateIndianPhone,
   normalizeUsername,
   usernameToAuthEmail,
+  isAtLeastAge,
+  MINIMUM_AGE,
 } from '../utils/validation';
 import {
   fetchProfile,
@@ -185,6 +187,9 @@ export function AuthProvider({ children }) {
     if (!name.trim()) throw new Error('Name is required');
     if (!validateUsername(username)) {
       throw new Error('Username must be 3–20 characters (letters, numbers, underscore only)');
+    }
+    if (!dob || !isAtLeastAge(dob, MINIMUM_AGE)) {
+      throw new Error(`You must be at least ${MINIMUM_AGE} years old to use Profind.`);
     }
     if (!validateIndianPhone(phone)) throw new Error('Please enter a valid Indian phone number');
     if (password.length < 6) throw new Error('Password must be at least 6 characters');

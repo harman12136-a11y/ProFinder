@@ -222,20 +222,6 @@ video {
   font-size: 0.85rem;
 }
 
-.btn-google {
-  background: white;
-  color: #333;
-  border: 1px solid #ddd;
-  width: 100%;
-  padding: 14px;
-  font-weight: 500;
-}
-
-.btn-google:hover {
-  background: #f8f8f8;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
 .card {
   background: var(--bg-card);
   border: 1px solid var(--border);
